@@ -35,7 +35,7 @@ h.test.normality <- function(x, method = "Shapiro-Wilk") {
     if (pvalue > .05) {message="Data appear to be normally distributed."} else {message="Data appear to NOT be normally distributed."}
   
     # Print results to console
-    cat("\nH.Lab - Normality test for ",label.x,":\n
+    cat("\nH.Lab ::: Normality test for ",label.x,":\n
         \t",message,"\n
         \tMethod: ",method,"\n\t\tW=",W,", p=",pvalue,"\n",sep='')}
   
