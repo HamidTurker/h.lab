@@ -1,18 +1,26 @@
 h.tools.model.parse <- function (model) {
   # Parse the model into its subcomponents. It expects '~' as the functional operator, allows algebraic operators like '+', '-', '*', '/', and '^n'.
-  # To introduce a grouping/conditional factor, use '|'. To introduce multiple outcome variables or conditionsl, use '&'.
+  # To introduce a grouping/conditional factor, use '|'. To introduce multiple outcome variables or conditionals, use '&'.
   #
   # For example:
   # model = ACT & GRE ~ time * study + age | method & school
   # This model states that the multiple DVs (ACT and GRE) are a function of several regressors (time by study plus age).
   # And we want this conditioned on two factors (method and school).
   
-  # VERSION ::: Feb 24 2020
+  # VERSION ::: Feb 25 2020
   
-  ##################################################################  
-  model = clean&raw&gender~time*age+hemi*study^2|rec&uni&stim
+  ##################################################################
+  
+  #lhs <- attr(terms(model), "variables")[2][[1]] # Left hand side of model (dependent variable)
+  #rhs <- attr(terms(model), "variables")[3][[1]] # Right hand side of model (independent variable)
+  
+  #model = clean&raw&gender~time*age+hemi*study^2|rec&uni&stim
+  #model = clean&raw&gender~time*age+hemi|rec&uni&stim
   model = clean~time*age+hemi|rec
   ##################################################################  
+  
+  # Initialize
+  dv=NULL; iv=NULL; ops=NULL; cond=NULL
   
   # Get left and right hand sides of the model (lhs, rhs)
   form <- as.character(model); lhs <- form[2]; rhs <- form[3]
@@ -39,10 +47,10 @@ h.tools.model.parse <- function (model) {
     dv[n.dv] = substr(lhs, start_position, nchar(lhs))
     
   } else { dv <- lhs } # If there is only one outcome variables..
-
+  
   
   # Further deconstruct the rhs (common algebraic operators like '+', '*', '-', '/', '^n' and the conditional operator '|' and '&' are allowed)
-  if (regexpr("\\|",rhs)[1] != -1) { # We'll start by checking if there are conditionals and parsing these out (conditional hand side, chs)
+  if (regexpr("\\|",rhs)[1] != -1) { # We'll start by checking if there are conditionals and parsing these out ("conditional hand side", chs)
     chs <- substr(rhs, regexpr("\\|",rhs)[1]+2, nchar(rhs))
     rhs <- substr(rhs, 1, regexpr("\\|",rhs)[1]-2)
     
@@ -55,46 +63,65 @@ h.tools.model.parse <- function (model) {
           end_position = gregexpr("&",chs)[[1]][i]-2 # Find the location of the i-th '&'
           cond[i] = substr(chs, start_position, end_position) # Parse out the i-th DV
           start_position  = gregexpr("&",chs)[[1]][i]+2 } # Update the start_position to the end_position where we just left off
-      
+        
         if (i > 1) {
           end_position = gregexpr("&",chs)[[1]][i]-2 # Find the location of the i-th '&'
           cond[i] = substr(chs, start_position, end_position) # Parse out the i-th DV
           start_position  = gregexpr("&",chs)[[1]][i]+2 } # Update the start_position to the end_position where we just left off
       }
     }
-    cond[n.cond] = substr(chs, start_position, nchar(lhs))
+    cond = chs
     
   } else { cond = NULL } # If there aren't any conditionals, we can simply proceed
   
-  if ((regexpr(" ",lhs)[1] != -1)) { # If there are multiple regressors/predictors/IVs..
+  
+  if ((regexpr(" ",rhs)[1] != -1)) { # If there are multiple regressors/predictors/IVs..
     
-    n.iv <- length(attr(gregexpr(" ",rhs)[[1]],'match.length'))-1 # Number of IVs
-    iv <- array(1:n.iv, dim=c(n.iv,1))
-    start_position = 1
-    for (i in 2:n.iv-1) {
-      if (i == 1) {
-        end_position = gregexpr(" ",rhs)[[1]][i]-1 # Find the location of the i-th '&'
-        iv[i] = substr(rhs, start_position, end_position) } # Parse out the i-th DV
-
-      if (i > 1) {
-        start_position = gregexpr(" ",rhs)[[1]][i]+1 # Update the start_position to the end_position where we just left off
-        end_position = gregexpr(" ",rhs)[[1]][i+1]-1 # Find the location of the i-th '&'
-        iv[i] = substr(rhs, start_position, end_position) } # Parse out the i-th DV
+    if (length(attr(gregexpr(" ",rhs)[[1]],'match.length')) %% 2 == 0) {
+      n.iv <- length(attr(gregexpr(" ",rhs)[[1]],'match.length'))-2 # Even number of IVs
+      iv <- array(1:n.iv, dim=c(n.iv,1))
+      start_position = 1; j = 0
+      for (i in 2:n.iv-1) {
+        if (i == 1) {
+          end_position = gregexpr(" ",rhs)[[1]][i]-1 # Find the location of the i-th ' '
+          iv[i] = substr(rhs, start_position, end_position) } # Parse out the i-th DV
+        
+        if (i > 1) {
+          start_position = gregexpr(" ",rhs)[[1]][i+j]+1 # Update the start_position to the end_position where we just left off
+          j=j+1
+          end_position = gregexpr(" ",rhs)[[1]][i+j]-1 # Find the location of the i-th ' '
+          iv[i] = substr(rhs, start_position, end_position) } # Parse out the i-th DV
+      }
+      iv[n.iv] = substr(rhs, gregexpr(" ",rhs)[[1]][n.iv+2]+1, nchar(rhs))
+    } else {
+      n.iv <- length(attr(gregexpr(" ",rhs)[[1]],'match.length'))-1 # Odd number of IVs
+      iv <- array(1:n.iv, dim=c(n.iv,1))
+      start_position = 1
+      for (i in 2:n.iv-1) {
+        if (i == 1) {
+          end_position = gregexpr(" ",rhs)[[1]][i]-1 # Find the location of the i-th ' '
+          iv[i] = substr(rhs, start_position, end_position) } # Parse out the i-th DV
+        
+        if (i > 1) {
+          start_position = gregexpr(" ",rhs)[[1]][i]+1 # Update the start_position to the end_position where we just left off
+          end_position = gregexpr(" ",rhs)[[1]][i+1]-1 # Find the location of the i-th ' '
+          iv[i] = substr(rhs, start_position, end_position) } # Parse out the i-th DV
+      }
+      iv[n.iv] = substr(rhs, gregexpr(" ",rhs)[[1]][n.iv+1]+1, nchar(rhs))
     }
-    iv[n.iv] = substr(rhs, gregexpr(" ",rhs)[[1]][n.iv+1]+1, nchar(rhs))
     
     n.ops <- n.iv-1 # Number of operators
     ops <- array(1:n.ops, dim=c(n.ops,1))
     
     entry=1
     for (i in seq(1,n.ops*2,2)) {
-        start_position = gregexpr(" ",rhs)[[1]][i]+1 
-        end_position = gregexpr(" ",rhs)[[1]][i+1]-1 # Find the location of the i-th '&'
-        ops[entry] = substr(rhs, start_position, end_position) # Parse out the i-th DV
-        entry = entry+1
-        }
+      start_position = gregexpr(" ",rhs)[[1]][i]+1 
+      end_position = gregexpr(" ",rhs)[[1]][i+1]-1 # Find the location of the i-th ' '
+      ops[entry] = substr(rhs, start_position, end_position) # Parse out the i-th operator
+      entry = entry+1
+    }
   } else { iv <- rhs } # If there is only one regressor..
-
+  
   # Parsed model
   return(list(dv,iv,ops,cond))
 }
