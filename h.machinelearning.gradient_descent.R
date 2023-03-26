@@ -1,7 +1,8 @@
 h.machinelearning.gradient_descent <- function(x, y, w_init, b_init, 
                                                alpha, num_iters,
                                                scale = FALSE,
-                                               max_iters = 1e+05,
+                                               model_type = "linear",
+                                               max_iters = 1e+100,
                                                conv_crit = 1e-100,
                                                div_crit = 1e+1000,
                                                search=FALSE, searchspace=3,
@@ -19,6 +20,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
       alpha (float)         : Learning rate
       num_iters (int)       : Number of iterations to run gradient descent
       scale (bool)          : Scale the features? This is recommended (default = TRUE)
+      model_type (char)     : Model ('linear', 'poly', 'logistic')
       max_iters (int)       : Maximum number of iterations to run gradient descent
       conv_crit (float)     : Minimum cost criterion under which descent is considered converged.
                               So, if J(w,b) < conv_crit, descent is halted. Default = 1e-100.
@@ -36,7 +38,8 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     Returns:
       w (scalar)        : Updated value of parameter after running gradient descent
       b (scalar)        : Updated value of parameter after running gradient descent
-      desc_hist (array) : History of cost (J), w, and b (values at each iteration)"
+      desc_hist (array) : History of cost (J), w, and b (values at each iteration)
+      idx (int, array)  : All local minima found with broad search"
   
   # Flex parameters (can be adjusted, if you want)
   sigdigs=6 # Number of significant digits to be used when printing to console
@@ -49,10 +52,23 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
   ### UNIVARIATE GRADIENT DESCENT ###
   if (is.null(dim(x)[1])) {
     
+    model_type = "linear"
+    
     # Initialize array for cost (J), w, and b at each iteration (for graphing)
     desc_hist = array(NA, c(num_iters,3)); colnames(desc_hist) = c("J","w","b")
+    n_examples = length(x)
     b = b_init
     w = w_init
+    
+    # Message to console
+    message(paste0(
+      "Starting univariate gradient descent :::
+        model      :   ",model_type, "
+        alpha      :   ",alpha,"
+        n examples :   ",n_examples,"
+        n features :   1
+        initial b  :   ",b,"
+        initial w  :   ",w))
     
     # Scale feature
     if (scale) {
@@ -215,7 +231,8 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
           descent_trace=data.frame(cost=desc_hist[,1], w=desc_hist[,2], b=desc_hist[,3])
           search_dot=data.frame(w=grad_search[idx,1], b=grad_search[idx,2], cost=grad_search[idx,3])
           J=xtabs(J~w+b, data=grad_search)
-          suppressWarnings(print(plot_ly(z=~J, type="surface", colors=col.surface, contours = list(
+          suppressWarnings(print(
+            plot_ly(z=~J, type="surface", colors=col.surface, contours = list(
             z = list(show=TRUE,usecolormap=TRUE,highlightcolor="lightblue",project=list(z=TRUE)),
             y = list(show=TRUE,usecolormap=TRUE,highlightcolor="lightblue",project=list(y=TRUE)),
             x = list(show=TRUE,usecolormap=TRUE,highlightcolor="lightblue",project=list(x=TRUE)))) %>%
@@ -246,12 +263,14 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     } # End plot
     
     # Finished!
-    return(list(w, b, desc_hist))
+    if (search) { return(list(w, b, desc_hist, idx)) } else { return(list(w, b, desc_hist)) }
     
     
   } else {
     
     ### MULTIVARIATE GRADIENT DESCENT ###
+    model_type = "linear"
+    
     n_examples = dim(x)[1]
     n_features = dim(x)[2]
     
@@ -261,19 +280,32 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     b = b_init
     w = w_init
     
+    # Message to console
+     message(paste0(
+      "Starting multivariate gradient descent :::
+        model      :   ",model_type, "
+        alpha      :   ",alpha,"
+        n examples :   ",n_examples,"
+        n features :   ",n_features,"
+        initial b  :   ",b))
+    for (i in 1:n_features) {
+    message(paste0(
+      "        initial w_",i,":   ",w[i]))
+    }
+    
     # Indices for last of all w's and the b (to improve readability in subsequent sections)
     idx_w = 2:(n_features+1)
     idx_b = (n_features+2)
     
     # Scale features
     if (scale) {
-      message("Scaling features")
+      message("Scaling features..")
       for (i in 1:n_features) { 
       message("On x_",i,", unscaled |max-min| = ",diff(range(x[,i]))) }
       x = scale(x)
       for (i in 1:n_features) { 
       message("On x_",i,", the newly scaled |max-min| = ",diff(range(x[,i]))) }
-      message("The range of the scaled features should now be similar. Is that right?")
+      message("The range of the scaled features should now be more similar. Is that right?")
     } else {
       message("NOTE: Features are not being scaled! Is that really what you want?")
       for (i in 1:n_features) { 
@@ -355,61 +387,121 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     message(paste0("      w_",i,":  ",signif(w[i],digits=sigdigs)))
     }
     message(paste0("      b:    ",signif(b,digits=sigdigs)))
-    message(paste0("      J:    ",signif(desc_hist[i,1],digits=sigdigs)))
-    
+    message(paste0("      J:    ",signif(desc_hist[num_iters,1],digits=sigdigs)))
     
     # Compute broader cost surface
     if (search) {
       
       # Search bounds
-      if (n_features <= 5 ) { searchspace_multivar=10 } else { searchspace_multivar=3 }
-      search_bounds=array(NA, c(2,n_features))
-      for (i in 1:n_features) {
-        search_bounds[1,i] = round(w[,i])-searchspace_multivar # lower
-        search_bounds[2,i] = round(w[,i])+searchspace_multivar # upper
-      }
+      if (n_features <= 5 ) { searchspace_multivar=c(3,.1) } else { searchspace_multivar=c(5,.01) }
       message(paste0("
-    Broad search requested. Computing now with searchspace_multivar = ",searchspace_multivar,"."))
+    Broad search requested. This can take a while! Computing now with searchspace_multivar = ",searchspace_multivar[1]," and ",searchspace_multivar[2],"."))
       
       # Initialize search
-      #foo = array(NA, c((2*searchspace_multivar+1)*(searchspace_multivar^n_features),n_features))
-      #for (i in 1:n_features) {
-      #  foo[,i] = rep(search_bounds[1,i]:search_bounds[2,i], each=searchspace_multivar^(n_features-(i-1)))
-      #}
-      foo = array(NA, c(1+searchspace_multivar*2,n_features))
-      for (i in 1:n_features) {
-        foo[,i] = search_bounds[1,i]:search_bounds[2,i]
+      foo = list() # Create empty list for eventual data frame
+      search_bounds=array(NA, c(2,n_features+1)) # Search bounds array
+      highvar_bound=5
+      for (i in 1:(n_features+1)) { # For all features and b..
+        
+        if (i < (n_features+1)) { # All features w_i
+          
+          # Variance on multivariate approaches can be low. If so, adjust.
+          w_var=var(desc_hist[,(1+i)])
+          w_mean=mean(desc_hist[,(1+i)])
+          if (w_var < 1) {
+            message(paste0("Low variance found on w_",i," (",signif(w_var,digits=sigdigs),"), which is not uncommon with mulivariate gradient descent. Adjusting search space accordingly.."))
+            
+            search_bounds[1,i] = floor(w_mean) # lower for each feature w
+            search_bounds[2,i] = ceiling(w_mean) # upper for each feature w
+            foo[[i]] = c(seq(search_bounds[1,i],search_bounds[2,i],searchspace_multivar[2])) # Append final data frame
+          } else if (w_var < 10) {
+            message(paste0("Variance found on w_",i," was < 10 (",signif(w_var,digits=sigdigs),"). Adjusting search space accordingly.."))
+            
+            search_bounds[1,i] = floor(w_mean)-floor(w_var*searchspace_multivar[1]) # lower for each feature w
+            search_bounds[2,i] = floor(w_mean)+floor(w_var*searchspace_multivar[1]) # upper for each feature w
+            foo[[i]] = c(seq(search_bounds[1,i],search_bounds[2,i])) # Append final data frame
+          } else {
+            message(paste0("Variance found on w_",i," was > 10 (",signif(w_var,digits=sigdigs),"). Adjusting search space accordingly.."))
+            
+            search_bounds[1,i] = floor(desc_hist[num_iters,(1+i)])-highvar_bound # lower for each feature w
+            search_bounds[2,i] = floor(desc_hist[num_iters,(1+i)])+highvar_bound # upper for each feature w
+            foo[[i]] = c(seq(search_bounds[1,i],search_bounds[2,i])) # Append final data frame
+          }
+        } else { # b..
+          
+          b_var=var(desc_hist[,(1+i)])
+          b_mean=mean(desc_hist[,(1+i)])
+          if (b_var < 1) {
+            message(paste0("Low variance found on b (",signif(b_var,digits=sigdigs),"), which is not uncommon with mulivariate gradient descent. Adjusting search space.."))
+            
+            search_bounds[1,i] = floor(b_mean) # lower for b
+            search_bounds[2,i] = ceiling(b_mean) # upper for b
+            foo[[i]] = c(seq(search_bounds[1,i],search_bounds[2,i],searchspace_multivar[2])) # Append final data frame
+          } else if (b_var < 10) {
+            message(paste0("Variance found on b was < 10 (",signif(b_var,digits=sigdigs),"). Adjusting search space accordingly.."))
+            
+            search_bounds[1,i] = floor(b_mean)-floor(b_var*searchspace_multivar[1]) # lower b
+            search_bounds[2,i] = floor(b_mean)+floor(b_var*searchspace_multivar[1]) # upper b
+            foo[[i]] = c(seq(search_bounds[1,i],search_bounds[2,i])) # Append final data frame
+            
+          } else {
+            message(paste0("Variance found on b was > 10 (",signif(b_var,digits=sigdigs),"). Adjusting search space accordingly.."))
+            
+            search_bounds[1,i] = floor(desc_hist[num_iters,(2+n_features)])-highvar_bound # lower for each feature w
+            search_bounds[2,i] = floor(desc_hist[num_iters,(2+n_features)])+highvar_bound # upper for each feature w
+            foo[[i]] = c(seq(search_bounds[1,i],search_bounds[2,i])) # Append final data frame
+          }
+        }
       }
-      
-      
-      
-      grad_search<-data.frame(
-        w=rep(lowerbound_w:upperbound_w,each=length(lowerbound_b:upperbound_b)),
-        b=rep(lowerbound_b:upperbound_b),
-        J=NA
-      )
+
+
+      # Format final data frame for the search
+      foo = h.format.expand_grid(foo) # Expand grid to form all unique combinations
+      grad_search = data.frame(J = rep(NA,dim(foo)[1])) # Set up new data frame, add features+b, and relabel
+      grad_search = cbind(grad_search,foo)
+      colnames(grad_search) = c("J",w.labels,"b")
       
       # Search this space..
       for (i in 1:dim(grad_search)[1]) {
-        grad_search[i,3] = h.machinelearning.cost(x, y, grad_search[i,1], grad_search[i,2])
+        w_vec = NULL
+        for (j in 1:n_features) {
+          w_vec = append(w_vec, grad_search[i,j+1])
+        }
+        grad_search$J[i] = h.machinelearning.cost(x, y, w_vec, grad_search$b[i])
+        
+        # Print cost every at intervals 10 times or as many iterations if < 10
+        if (verbose) {
+          if ( i == 1 | i %% ceiling(num_iters/5) == 0) {
+            message(paste0("Iteration ",i,"/",dim(grad_search)[1]," (~",signif((i/dim(grad_search)[1])*100,digits=5)," %) ::"))
+            message(paste0("     w: ",signif(grad_search[i,2:(1+n_features)],digits=sigdigs)))
+            message(paste0("     b: ",signif(grad_search$b[i],digits=sigdigs)))
+            message(paste0("     Cost (J_wb): ",signif(grad_search$J[i],digits=sigdigs)))
+          } # Message end
+        } # Verbose end
       }
       
       # Do the results (approximately) match?
       idx=which(grad_search$J==min(grad_search$J))
       
-      message(paste0("
+      # If multiple minima
+      if (length(idx) > 1) {
+        message(paste0("
                  
-    Broad search found w (",signif(grad_search[idx,1],digits=sigdigs),") and b (",signif(grad_search[idx,2],digits=sigdigs),"), with a cost (J_wb) of ",signif(grad_search[idx,3],digits=sigdigs),"."))
-      
+    Broad search found multiple minima, with a minimal cost (J_wb) of ",signif(min(grad_search$J),digits=sigdigs),"."))
+ 
+      } else {
+        
+        message(paste0("
+                 
+    Broad search found the following values:"))
+        for (i in 1:n_features) {
+          message(paste0("      w_",i,":  ",signif(grad_search[idx,(1+i)],digits=sigdigs)))
+        }
+        message(paste0("      b:    ",signif(grad_search$b[idx],digits=sigdigs)))
+        message(paste0("      J:    ",signif(grad_search$J[idx],digits=sigdigs)))  
+        
+      }
     } # Search end
-    
-    
-    # Make cost surface matrix
-    surface <- matrix(grad_search$J, nrow = length(lowerbound_w:upperbound_w), ncol = length(lowerbound_b:upperbound_b))
-    mat_surface <- list(as.vector(lowerbound_w:upperbound_w),
-                        as.vector(lowerbound_b:upperbound_b),
-                        surface)
-    
     
     # Plot cost?
     if (plot) {
@@ -434,28 +526,35 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
                main="Late search", xlab="Iteration", ylab="Cost")
           
           # 2d surface
-          ggplot(grad_search, aes(w, b, z=J)) + 
-            geom_tile() + 
-            geom_contour_filled(colour="white")
+          for (i in 1:n_features) {
+            w_i=grad_search[,i+1]
+            ggplot(grad_search, aes(w_i, b, z=J)) + 
+              geom_tile() + 
+              geom_contour_filled(colour="white")
+          }
           
           # 3d surface
-          descent_trace=data.frame(cost=desc_hist[,1], w=desc_hist[,2], b=desc_hist[,3])
-          search_dot=data.frame(w=grad_search[idx,1], b=grad_search[idx,2], cost=grad_search[idx,3])
-          J=xtabs(J~w+b, data=grad_search)
-          suppressWarnings(print(plot_ly(z=~J, type="surface", colors=col.surface, contours = list(
-            z = list(show=TRUE,usecolormap=TRUE,highlightcolor="lightblue",project=list(z=TRUE)),
-            y = list(show=TRUE,usecolormap=TRUE,highlightcolor="lightblue",project=list(y=TRUE)),
-            x = list(show=TRUE,usecolormap=TRUE,highlightcolor="lightblue",project=list(x=TRUE)))) %>%
-              add_trace(x=~b, y=~w, z=~cost, data=descent_trace,
-                        type="scatter3d", mode="lines", 
-                        line=list(color="red", width=4)) %>%
-              add_trace(x=~b, y=~w, z=~cost, data=search_dot,
-                        type="scatter3d", mode="markers",
-                        marker=list(color="red", size=10)) %>%
-              layout(title = 'Cost Surface with Descent Trace',
-                     scene = list(xaxis=list(title="b"), yaxis=list(title="w"))) %>%
-              hide_colorbar() %>% hide_legend()))
-          
+          for (i in 1:n_features) {
+            descent_trace=data.frame(cost=desc_hist[,1], w=desc_hist[,(1+i)], b=desc_hist[,(2+n_features)])
+            search_dot=data.frame(cost=grad_search$J[idx], w=grad_search[idx,(1+i)], b=grad_search$b[idx])
+            w_i=grad_search[,(1+i)]
+            J=xtabs(J~w_i+b, data=grad_search)
+            suppressWarnings(print(
+              plot_ly(z=~J, type="surface", colors=col.surface, contours = list(
+              z = list(show=TRUE,usecolormap=TRUE,highlightcolor="lightblue",project=list(z=TRUE)),
+              y = list(show=TRUE,usecolormap=TRUE,highlightcolor="lightblue",project=list(y=TRUE)),
+              x = list(show=TRUE,usecolormap=TRUE,highlightcolor="lightblue",project=list(x=TRUE)))) %>%
+                add_trace(x=~b, y=~w, z=~cost, data=descent_trace,
+                          type="scatter3d", mode="lines", 
+                          line=list(color="red", width=4)) %>%
+                add_trace(x=~b, y=~w, z=~cost, data=search_dot,
+                          type="scatter3d", mode="markers",
+                          marker=list(color="red", size=10)) %>%
+                layout(title = 'Cost Surface with Descent Trace',
+                       scene = list(xaxis=list(title="b",range=c(search_bounds[1,dim(search_bounds)[2]],search_bounds[2,dim(search_bounds)[2]])),
+                                    yaxis=list(title=paste0("w_",i),range=c(search_bounds[1,i],search_bounds[2,i])))) %>%
+                hide_colorbar() %>% hide_legend()))
+          }
         } else { # ..and we didn't run a broad search..
           par(mfrow=c(2,1))
           splitval=1000
@@ -473,7 +572,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     } # End plot
     
     # Finished!
-    return(list(w, b, desc_hist))
+    if (search) { return(list(w, b, desc_hist, idx)) } else { return(list(w, b, desc_hist)) }
     
   } ### MULTIVARIATE GRADIENT DESCENT ###
 }

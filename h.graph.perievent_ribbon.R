@@ -1,7 +1,8 @@
 h.graph.perievent_ribbon <- function(events, spikes, group = NULL,
-                                     pre = 5, post = 5, bin = .1) {
+                                     pre = 5, post = 5, bin = .1,
+                                     allow_dupe = TRUE) {
   
-  # v0.1: 2022 August 27
+  # v0.2: 2023 feb 14
   
   # Make a peri-event ribbon plot around events (events, in seconds into global time),
   # with a pre-event window (pre, in seconds, default = 5 s),
@@ -10,8 +11,9 @@ h.graph.perievent_ribbon <- function(events, spikes, group = NULL,
   # for time points where spikes occurred (spikes, in seconds into global time).
   # If there are trial conditions, provide them as an ordered list (group),
   # where index matches the index for the ordered events (i.e. group[i] is for events[i])
-  # Make a plot? plot=TRUE
-  # Divide each bin count by the total number of counts to get percentages? proportional = TRUE
+  
+  # Check args
+  if (!allow_dupe) { message("Are you sure you want to remove counted spikes (thus, no duplicates)? That is often not recommended.") }
   
   # Initialize histogram data frame
   if (is.null(group)) { # No groups
@@ -50,7 +52,8 @@ h.graph.perievent_ribbon <- function(events, spikes, group = NULL,
     }
     
     # Remove binned spikes from list of all spikes, to prevent double-counting
-    spikes = setdiff(spikes,this_trial)
+    if (!allow_dupe) { spikes = setdiff(spikes,this_trial) }
+    
   }
 
   # Adjust count data into spike rate

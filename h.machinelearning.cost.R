@@ -22,7 +22,7 @@ h.machinelearning.cost <- function(x, y, w, b, method = "descent") {
       
       # Compute sum of all squared errors
       cost_sum = 0
-      for (i in 1:n_examples){
+      for (i in 1:n_examples) {
         f_wb = w * x[i] + b # Product of ith example plus bias
         sq_error = (f_wb - y[i]) ** 2 # Error of ith example's predicted score
         cost_sum = cost_sum + sq_error # Add ith error to total cost sum
@@ -34,15 +34,15 @@ h.machinelearning.cost <- function(x, y, w, b, method = "descent") {
       
       # Compute sum of all squared errors
       cost_sum = 0
-      for (i in 1:n_examples){
-        f_wb_i = (as.numeric(x[i,]) %*% w_init + b)[1] # Dot product of ith example plus bias
+      for (i in 1:n_examples) {
+        f_wb_i = (as.numeric(x[i,]) %*% w + b)[1] # Dot product of ith example plus bias
         sq_error = (f_wb_i - y[i]) ** 2 # Error for ith example's predicted score
         cost_sum = cost_sum + sq_error # Add ith error to total cost sum
       }
     }
     
     # Compute average total cost and return
-    total_cost = (1/(2*n_examples)) * cost_sum
+    total_cost = cost_sum / (2*n_examples)
     return(total_cost)
     
   }

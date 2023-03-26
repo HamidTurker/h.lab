@@ -1,9 +1,13 @@
+# Source
+message("h.graph.perievent :: v0.6: 2023 Jan 31")
+
+# Function
 h.graph.perievent <- function(events, spikes, group = NULL,
                               pre = 5, post = 5, bin = .1,
                               plot = FALSE, plot_y = "count",
-                              theme = TRUE) {
+                              allow_dupe = TRUE, theme = FALSE) {
   
-  # v0.3: 2022 July 3
+  # v0.6: 2023 Jan 31
   
   # Make a peri-event histogram around events (events, in seconds into global time),
   # with a pre-event window (pre, in seconds, default = 5 s),
@@ -15,25 +19,24 @@ h.graph.perievent <- function(events, spikes, group = NULL,
   # Make a plot? plot=TRUE
   # Divide each bin count by the total number of counts to get percentages? proportional = TRUE
   
-  #events=trials$arriv
-  #spikes=na.omit(cell.array[,1,i])
-  #group=trials$ismatch
-  #pre=5
-  #post=5
-  #bin=.1
-  
+  # Check args
+  if (!allow_dupe) { message("Are you sure you want to remove counted spikes (thus, no duplicates)? That is often not recommended.") }
   
   # Initialize histogram data frame
   if (is.null(group)) { # No groups
     histogram_frame <- data.frame(
       time = seq(-pre,post,bin),
-      count = 0)
+      count = 0,
+      count_percentage = 0,
+      Hz = 0)
   } else { # With groups
     n_groups = length(unique(group))
     histogram_frame <- data.frame(
       group = rep(sort(unique(group)), each=length(seq(-pre,post,bin))),
       time = rep(seq(-pre,post,bin), n_groups),
-      count = 0)
+      count = 0,
+      count_percentage = 0,
+      Hz = 0)
   }
   
   # Populate the histogram data frame
@@ -60,7 +63,7 @@ h.graph.perievent <- function(events, spikes, group = NULL,
       }
       
       # Remove binned spikes from list of all spikes, to prevent double-counting
-      spikes = setdiff(spikes,this_trial)
+      if (!allow_dupe) { spikes = setdiff(spikes,this_trial) }
     }
     
   } else { # With groups
@@ -75,10 +78,10 @@ h.graph.perievent <- function(events, spikes, group = NULL,
       this_trial = spikes[spikes >= start & spikes <= end] # All spikes within trial i's window surrounding the event
       
       # Fill in the corresponding time bins
-      for (j in 1:length(histogram_frame$time)) { # For each bin..
-        
+      for (j in 1:length(unique(histogram_frame$time))) { # For each bin..
+
         # Which time bin?
-        bin_entry = seq(-pre,post,bin)[j]
+        bin_entry = unique(histogram_frame$time)[j]
         
         # Count the spikes for each time unit within this trial
         step_start = start+bin*(j-1)
@@ -99,7 +102,7 @@ h.graph.perievent <- function(events, spikes, group = NULL,
       }
       
       # Remove binned spikes from list of all spikes, to prevent double-counting
-      spikes = setdiff(spikes,this_trial)
+      if (!allow_dupe) { spikes = setdiff(spikes,this_trial) }
     }
   }
   
@@ -107,16 +110,16 @@ h.graph.perievent <- function(events, spikes, group = NULL,
   if (is.null(group)) { # No groups
     n_spikes = sum(histogram_frame$count) # Total number of spikes
     histogram_frame$count_percentage = histogram_frame$count / n_spikes * 100 # Percentage of spikes falling in a given bin
+    histogram_frame$count_percentage[is.na(histogram_frame$count_percentage)] = 0 # Correct for any by-0 divisions
     histogram_frame$Hz = histogram_frame$count / (length(events)*bin) # Spike rate (Hz)
     
   } else { # With groups
     group_labels = unique(group) # Names of the unique groups
-    histogram_frame$count_percentage = 0
-    histogram_frame$Hz = 0
     
     for (i in 1:length(group_labels)) { # Adjust data by subgroup
       n_spikes = sum(histogram_frame$count[histogram_frame$group == group_labels[i]]) # Total number of spikes within the i-th group
       histogram_frame$count_percentage[histogram_frame$group == group_labels[i]] = histogram_frame$count[histogram_frame$group == group_labels[i]] / n_spikes * 100 # Percentage of spikes falling in a given bin in i-th group
+      histogram_frame$count_percentage[is.na(histogram_frame$count_percentage)] = 0 # Correct for any by-0 divisions
       histogram_frame$Hz[histogram_frame$group == group_labels[i]] = histogram_frame$count[histogram_frame$group == group_labels[i]] / (sum(group==group_labels[i])*bin) # Spike rate (Hz) in i-th group
     }
   }
