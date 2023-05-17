@@ -2,10 +2,10 @@
 message("h.graph.raster :: v0.6: 2023 March 25")
 
 # Function
-h.graph.raster2 <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5, post = 5, bin = .001, no_plot = FALSE, 
-                            group = NULL, group_colors = NULL, event_marker_col = "black", event_marker_lwd = 1, spike_size = 1, spike_col = "grey",
-                            group_line_size = 2, group_line_col = "black", ylab = NULL, xlab = NULL, other_events = NULL, other_events_cols = NULL, sortby_other_event = NULL,
-                            other_event_size = 5, raster_lines = FALSE, raster_line_size = 1/5, raster_line_col = "lightgrey") {
+h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5, post = 5, bin = .001, no_plot = FALSE, 
+                           group = NULL, group_colors = NULL, event_marker_col = "black", event_marker_lwd = 1, spike_size = 1, spike_col = "grey",
+                           group_line_size = 2, group_line_col = "black", ylab = NULL, xlab = NULL, other_events = NULL, other_events_cols = NULL, sortby_other_event = NULL,
+                           other_event_size = 4, raster_lines = FALSE, raster_line_size = 1/5, raster_line_col = "lightgrey") {
   
   "
   Create a raster plot from the provided spike train, event/stimulus times, and 
@@ -55,7 +55,7 @@ h.graph.raster2 <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 
       raster_line_col (char)  : Color of the guiding raster lines.
       
                                 
-    Returns:
+    Return:
       Peri-event spike raster as either a figure or a data frame.
   "
   
@@ -81,7 +81,7 @@ h.graph.raster2 <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 
       }
       if (is.null(other_events_cols)) { stop("You didn't assign other_events_cols.") }
       if (!length(other_events_cols)==length(other_events)) { stop("The number of other_events_cols doesn't match the number of other_event vectors.") }
-      if (sortby_other_event > length(other_events)) { stop("The sortby_other_event index is larger than the number of other_event vectors.") }
+      if (!is.null(sortby_other_event)) { if (sortby_other_event > length(other_events)) { stop("The sortby_other_event index is larger than the number of other_event vectors.") } }
     }
   }
   
@@ -157,7 +157,7 @@ h.graph.raster2 <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 
               # Also mark other events, if requested
               if (!is.null(other_event_times)) {
                 for (j in 1:n_other_events) {
-                  abline(v=other_event_times[i,j], col=other_events_cols[j], lwd=other_event_mark_size)
+                  abline(v=other_event_times[i,j], col=other_events_cols[j], lwd=other_event_size)
                 }
               }
             } 
@@ -257,7 +257,7 @@ h.graph.raster2 <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 
             
             # And mark the other events in that peri-event window
             for (j in 1:n_other_events) {
-              abline(v=other_event_times[i,j], col=other_events_cols[j], lwd=other_event_mark_size)
+              abline(v=other_event_times[i,j], col=other_events_cols[j], lwd=other_event_size)
             }
           }
           

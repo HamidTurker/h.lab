@@ -1,28 +1,61 @@
 # Source
-message("h.graph.perievent :: v0.6: 2023 Jan 31")
+message("h.graph.perievent :: v0.7: 2023 Mar 27")
 
 # Function
 h.graph.perievent <- function(events, spikes, group = NULL,
                               pre = 5, post = 5, bin = .1,
-                              plot = FALSE, plot_y = "count",
-                              allow_dupe = TRUE, theme = FALSE) {
+                              allow_dupe = TRUE, other_events = NULL, other_events_cols = NULL,
+                              plot = FALSE, plot_y = "count", theme = FALSE) {
   
-  # v0.6: 2023 Jan 31
+  "
+  Make a peri-event histogram around events (events, in seconds into global time),
+  with a pre-event and post-event window, with a given bin size.
   
-  # Make a peri-event histogram around events (events, in seconds into global time),
-  # with a pre-event window (pre, in seconds, default = 5 s),
-  # and post-event window (post, in seconds, default = 5 s),
-  # with a given bin size (bin, in seconds, default = 0.1 s),
-  # for time points where spikes occurred (spikes, in seconds into global time).
-  # If there are trial conditions, provide them as an ordered list (group),
-  # where index matches the index for the ordered events (i.e. group[i] is for events[i])
-  # Make a plot? plot=TRUE
-  # Divide each bin count by the total number of counts to get percentages? proportional = TRUE
+    Args:
+      events (vector)         : Vector of event times (numeric) for events of interest.
+      spikes (vector)         : Vector of time points where spikes occurred (numeric, in seconds).
+      group (vector)          : Vector where each entry notes the group label of the corresponding entry in the event vector.
+      pre (num)               : Pre-event window (in seconds).
+      post (num)              : Post-event window (in seconds).
+      allow_dupe (bool)       : Allow a spike to be counted multiple times if it falls within overlapping trial windows (allowing this is recommended).
+      other_events (list)     : List of vectors of other event times to be marked (events which
+                                are not the event being used as reference point at x=0). Each
+                                vector in the list must have length equal to length(events) and ordered
+                                to match the ordering of the events vector. If a given trial does not
+                                have a certain other_event to be marked, leave that entry as NA.
+      other_events_cols (char): Colors to mark the other events in (e.g., other_events_cols=c('red','green','blue'),
+                                for 3 other events to be marked).
+      plot (bool)             : Make a plot (TRUE) or just return the final data frame (FALSE)?
+      plot_y (char)           : Can plot raw counts (plot_y = 'count') or percentage (plot_y = 'percentage').
+      theme (bool)            : Set a transparent theme for the plot (theme = TRUE) or not (theme = FALSE).
+      
+      
+    Return:
+      A peri-event histrogram or data frame to create your own.
+  "
   
   # Check args
-  if (!allow_dupe) { message("Are you sure you want to remove counted spikes (thus, no duplicates)? That is often not recommended.") }
-  
+  {
+    if (!allow_dupe) { message("Are you sure you want to remove counted spikes (thus, no duplicates)? That is often not recommended.") }
+    
+    if (!is.null(other_events)) {
+      if (length(other_events)==1) { other_events = list(other_events) }
+      if (!class(other_events)=="list") { stop("Your other_events must be in a list of vectors.") }
+      for (i in 1:length(other_events)) {
+        if (!length(other_events[[i]])==length(events)) { 
+          stop("Each provided other_event does not have a corresponding event. There has to be the same number of elements in each other_event vector as the main event vector.") }
+      }
+      if (!is.null(other_events_cols)) { 
+        if (!length(other_events_cols)==length(other_events)) { stop("The number of other_events_cols doesn't match the number of other_event vectors.") }
+        if (sortby_other_event > length(other_events)) { stop("The sortby_other_event index is larger than the number of other_event vectors.") }
+      }
+    }
+    
+    if (pre < 0) { pre = abs(pre) }
+  }
+    
   # Initialize histogram data frame
+  n_events = length(events)
   if (is.null(group)) { # No groups
     histogram_frame <- data.frame(
       time = seq(-pre,post,bin),
@@ -106,6 +139,17 @@ h.graph.perievent <- function(events, spikes, group = NULL,
     }
   }
   
+  # Any other_events to be marked? How many other_events do we have?
+  if (!is.null(other_events)) {
+    n_other_events = length(other_events)
+    other_event_times = array(NA, c(n_events,n_other_events))
+    
+    # Adjust other_event times in relation to the main event marker
+    for (i in 1:n_other_events) {
+      other_event_times[,i] = as.numeric(unlist(other_events[i])) - events
+    }
+  }
+  
   # Adjust count data into percentage and spike rate
   if (is.null(group)) { # No groups
     n_spikes = sum(histogram_frame$count) # Total number of spikes
@@ -125,14 +169,14 @@ h.graph.perievent <- function(events, spikes, group = NULL,
   }
   
   # Set theme?
-  if (theme == TRUE) {
+  if (theme) {
     theme_set(theme(panel.background = element_rect(fill = "transparent", colour = NA),
                     plot.background = element_rect(fill = "transparent", colour = NA),
                     text = element_text(size=text_size)))
   }
   
   # Make plot?
-  if (plot == TRUE) {
+  if (plot) {
     if (plot_y == "count") { 
       return(ggplot(histogram_frame, aes(x=time, y=count)) + 
                geom_bar(stat='identity', colour="black") +
@@ -147,6 +191,6 @@ h.graph.perievent <- function(events, spikes, group = NULL,
                  plot.background = element_rect(fill = "transparent", colour = NA)))
     }
   } else {
-    return(histogram_frame)
+    if (is.null(other_events)) { return(histogram_frame) } else { return(list(histogram_frame,other_event_times))}
   }
 }

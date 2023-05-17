@@ -13,6 +13,28 @@ h.simulate.neuron_MCsim <- function(signal=TRUE, xMin=1, xMax=10000, n_trials=1,
   
   Based on Michael Hill's expsim in the h-coefficient toolbox for Matlab.
   If you use this function, you must cite https://journals.physiology.org/doi/full/10.1152/jn.00595.2014
+  
+    Args:
+      signal (bool)                 : Do you want to simulate a neuron responding to an actual signal (TRUE) or simulate baseline firing (FALSE)?
+      xMin (num)                    :
+      xMax (num)                    :
+      n_trials (num)                : The number of trials you want to simulate with the same parameters.
+      window (vec of nums)          : Vector of numeric labels for the temporal bins.
+      window_labels (vec of nums)   : The labels for simulated time window (e.g., window_labels = c(-5,5) simulates a neuron from t=-5 s to t=5 seconds of firing around a
+                                      simulated event centered on t=0).
+      n_spikes (num)                : Number of simulated spikes to be distributed across the window.
+      baseline_window (vec of nums) :
+      refract (scalar)
+      yMin (num)
+      yMax (num)
+      resp_peak (num)
+      y_lims (num)
+      sigma (scalar)
+      amplitude (scalar)
+      stim_time (num)
+      samplerate (num)
+      plot (bool)
+      modulator (num)
   "
   
   # Set basic parameters

@@ -3,8 +3,8 @@ message("h.graph.pop_perievent :: v0.1: 2023 Mar 18")
 
 # Function
 h.graph.pop_perievent <- function(popA, popB = NULL, sort = NULL, samplerate = .1, popA_idx = NULL, popB_idx = NULL,
-                                   window = c(-5,5), normalize = TRUE, smooth = TRUE, kernel_bw = 10, kernel_type = "normal",
-                                   contrast = FALSE, nan2zero = TRUE) {
+                                  window = c(-5,5), normalize = TRUE, smooth = TRUE, kernel_bw = 10, kernel_type = "normal",
+                                  contrast = FALSE, nan2zero = TRUE) {
   
   "
   Make a population level array for plotting. The array can be sorted by a peak, windowed-average, and/or
