@@ -1,5 +1,5 @@
 # Source
-message("h.graph.raster :: v0.6: 2023 March 25")
+message("h.graph.raster :: v0.7: 2023 June 15")
 
 # Function
 h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5, post = 5, bin = .001, no_plot = FALSE, 
@@ -28,6 +28,8 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
       post (num)              : Window following the event to be plotted (in seconds).
       bin (num)               : Time bin for the raster.
       no_plot (bool)          : If TRUE, don't make a plot, just return the created raster (as data frame).
+                                The data frame will be 'unflipped' and otherwise 'unordered' (i.e., the top 
+                                row will be the first 'per' [typically, a trial], the second row the second per, etc.)
       group (vector)          : Grouping variable of each event time.
       group_colors (char)     : Color for each group's raster (e.g., group_colors = c('red','green')).
       event_marker_col (char) : Color of the x=0 marker on the x-axis.
@@ -68,29 +70,35 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
     
     if (!is.null(group)) {
       if (!length(group)==length(events)) { stop("Each provided event does not have a corresponding group label.") }
-      if (is.null(group_colors)) { stop("You didn't assign group colors.") }
-      if (!length(group_colors)==length(unique(group))) { stop("The number of group_colors doesn't match the number of unique group labels.") }
+      if (!no_plot & is.null(group_colors)) { stop("You didn't assign group colors.") }
+      if (!no_plot & !length(group_colors)==length(unique(group))) { stop("The number of group_colors doesn't match the number of unique group labels.") }
     }
     
     if (!is.null(other_events)) {
-      if (length(other_events)==1) { other_events = list(other_events) }
-      if (!class(other_events)=="list") { stop("Your other_events must be in a list of vectors.") }
-      for (i in 1:length(other_events)) {
-        if (!length(other_events[[i]])==length(events)) { 
-          stop("Each provided other_event does not have a corresponding event. There has to be the same number of elements in each other_event vector as the main event vector.") }
+      if (!no_plot) {
+        if (length(other_events)==1) { other_events = list(other_events) }
+        if (!class(other_events)=="list") { stop("Your other_events must be in a list of vectors.") }
+        for (i in 1:length(other_events)) {
+          if (!length(other_events[[i]])==length(events)) { 
+            stop("Each provided other_event does not have a corresponding event. There has to be the same number of elements in each other_event vector as the main event vector.") }
+        }
+        if (is.null(other_events_cols)) { stop("You didn't assign other_events_cols.") }
+        if (!length(other_events_cols)==length(other_events)) { stop("The number of other_events_cols doesn't match the number of other_event vectors.") }
+        if (!is.null(sortby_other_event)) { if (sortby_other_event > length(other_events)) { stop("The sortby_other_event index is larger than the number of other_event vectors.") } }
+      } else {
+        warning("You requested a return of the raster frame (i.e., no plot), but also entered other_event info. The raster frame will not include this info, though. Is this correct?")
       }
-      if (is.null(other_events_cols)) { stop("You didn't assign other_events_cols.") }
-      if (!length(other_events_cols)==length(other_events)) { stop("The number of other_events_cols doesn't match the number of other_event vectors.") }
-      if (!is.null(sortby_other_event)) { if (sortby_other_event > length(other_events)) { stop("The sortby_other_event index is larger than the number of other_event vectors.") } }
     }
   }
   
   # Initialize
-  raster_frame <- array(0, dim=c(length(unique(per)), length(seq(-pre,post,bin))))
-  colnames(raster_frame) <- as.character(seq(-pre,post,bin))
-  per <- 1:length(per); rownames(raster_frame) <- as.character(unique(per))
-  n_events = length(events)
-  if (!is.null(group)) { n_groups = length(unique(group)) }
+  {
+    raster_frame <- array(0, dim=c(length(unique(per)), length(seq(-pre,post,bin))))
+    colnames(raster_frame) <- as.character(seq(-pre,post,bin))
+    per <- 1:length(per); rownames(raster_frame) <- as.character(unique(per))
+    n_events = length(events)
+    if (!is.null(group)) { n_groups = length(unique(group)) }
+  }
   
   # Mark spikes in the raster surrounding each event
   for (i in 1:n_events) { # For each event..
@@ -132,6 +140,7 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
   if (no_plot) { # Make a plot or just return raster_frame?
     
     return(as.data.frame(raster_frame)) # No plot, just return the data frame
+    message("Raster frame is unflipped and unordered: the first row is the first 'per'.")
     
   } else { # Make a plot
     
