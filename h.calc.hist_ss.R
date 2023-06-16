@@ -1,8 +1,8 @@
 h.calc.hist_ss <- function(x, n = 100, plotting = FALSE) {
   
   "
-  Histogram binsize optimizing, behaves as pracma's 'histss'. Calculate the
-  bin sizes of histograms that optimizes them in a way to best displays
+  Histogram binsize optimizing, behaves as pracma's 'histss'. Calculates the
+  bin sizes of histograms that optimizes them in a way that best displays
   the underlying spike rate.
   
   Based on pracma's implementation of the method outlined in:
