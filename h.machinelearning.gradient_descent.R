@@ -1,10 +1,13 @@
+# Source
+message("h.machinelearning.gradient_descent :: v0.2: 2023 Aug 6")
+
+# Function
 h.machinelearning.gradient_descent <- function(x, y, w_init, b_init, 
                                                alpha, num_iters,
                                                scale = FALSE,
-                                               model_type = "linear",
-                                               max_iters = 1e+100,
-                                               conv_crit = 1e-100,
-                                               div_crit = 1e+1000,
+                                               max_iters = 1e+10,
+                                               conv_crit = 1e-50,
+                                               div_crit = 1e+100,
                                                search=FALSE, searchspace=3,
                                                cost.method = NULL, 
                                                gradient.method = NULL,
@@ -20,7 +23,6 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
       alpha (float)         : Learning rate
       num_iters (int)       : Number of iterations to run gradient descent
       scale (bool)          : Scale the features? This is recommended (default = TRUE)
-      model_type (char)     : Model ('linear', 'poly', 'logistic')
       max_iters (int)       : Maximum number of iterations to run gradient descent
       conv_crit (float)     : Minimum cost criterion under which descent is considered converged.
                               So, if J(w,b) < conv_crit, descent is halted. Default = 1e-100.
@@ -50,25 +52,24 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
   
   
   ### UNIVARIATE GRADIENT DESCENT ###
-  if (is.null(dim(x)[1])) {
-    
-    model_type = "linear"
+  if (is.null(dim(x))) {
     
     # Initialize array for cost (J), w, and b at each iteration (for graphing)
-    desc_hist = array(NA, c(num_iters,3)); colnames(desc_hist) = c("J","w","b")
-    n_examples = length(x)
-    b = b_init
-    w = w_init
-    
-    # Message to console
-    message(paste0(
-      "Starting univariate gradient descent :::
-        model      :   ",model_type, "
+    {
+      desc_hist = array(NA, c(num_iters,3)); colnames(desc_hist) = c("J","w","b")
+      n_examples = length(x)
+      b = b_init
+      w = w_init
+      
+      # Message to console
+      message(paste0(
+        "Starting univariate gradient descent :::
         alpha      :   ",alpha,"
         n examples :   ",n_examples,"
         n features :   1
         initial b  :   ",b,"
         initial w  :   ",w))
+    }
     
     # Scale feature
     if (scale) {
@@ -103,30 +104,20 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
         # Remove all NA
         desc_hist<-na.omit(desc_hist)
         
-        if (i == 1) {
-          message(paste0("
-    Gradient descent has converged after 1 iteration."))
-        } else {
-          message(paste0("
-    Gradient descent has converged after ",i," iterations."))}
+        message(paste0("
+    Gradient descent has converged after ",i," iteration(s)."))
         break
       }
-      
+          
       # Do we have divergence?
       if (any(desc_hist[i,] > div_crit | desc_hist[i,] == -Inf)) {
         
         # Remove all NA
         desc_hist<-na.omit(desc_hist)
-        
-        if (i == 1) {
-          stop(paste0("
-    Gradient descent has diverged after 1 iteration. Does that sound right?
+  
+        stop(paste0("
+    Gradient descent has diverged after ",i," iteration(s).
     w (",signif(desc_hist[i,2],digits=sigdigs),") and b (",signif(desc_hist[i,3],digits=sigdigs),"), with a cost (J_wb) of ",signif(desc_hist[i,1],digits=sigdigs),"."))
-        } else {
-          stop(paste0("
-    Gradient descent has diverged after ",i," iterations.
-    w (",signif(desc_hist[i,2],digits=sigdigs),") and b (",signif(desc_hist[i,3],digits=sigdigs),"), with a cost (J_wb) of ",signif(desc_hist[i,1],digits=sigdigs),"."))
-        }
       }
       
       # Print cost every at intervals 10 times or as many iterations if < 10
@@ -141,10 +132,12 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     } # Descent end
     
     # Print final results to console
+    {
     message(paste0("
                  
     Gradient descent found w (",signif(w,digits=sigdigs),") and b (",signif(b,digits=sigdigs),"), with a cost (J_wb) of ",signif(desc_hist[i,1],digits=sigdigs),"."))
-    
+    }
+      
     if (scale) {
       message("
     NOTE: This is another reminder that scaling was NOT applied!
@@ -190,14 +183,13 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
                  
     Broad search found w (",signif(grad_search[idx,1],digits=sigdigs),") and b (",signif(grad_search[idx,2],digits=sigdigs),"), with a cost (J_wb) of ",signif(grad_search[idx,3],digits=sigdigs),"."))
       
+      # Make cost surface matrix
+      surface <- matrix(grad_search$J, nrow = length(lowerbound_w:upperbound_w), ncol = length(lowerbound_b:upperbound_b))
+      mat_surface <- list(as.vector(lowerbound_w:upperbound_w),
+                          as.vector(lowerbound_b:upperbound_b),
+                          surface)
+      
     } # Search end
-    
-    
-    # Make cost surface matrix
-    surface <- matrix(grad_search$J, nrow = length(lowerbound_w:upperbound_w), ncol = length(lowerbound_b:upperbound_b))
-    mat_surface <- list(as.vector(lowerbound_w:upperbound_w),
-                        as.vector(lowerbound_b:upperbound_b),
-                        surface)
     
     
     # Plot cost?
@@ -266,15 +258,17 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     if (search) { return(list(w, b, desc_hist, idx)) } else { return(list(w, b, desc_hist)) }
     
     
-  } else {
+  }
+  
+  ### MULTIVARIATE GRADIENT DESCENT ###  
+  if (!is.null(dim(x))) {
     
-    ### MULTIVARIATE GRADIENT DESCENT ###
-    model_type = "linear"
-    
+    # Setup
     n_examples = dim(x)[1]
     n_features = dim(x)[2]
     
     # Initialize array for cost (J), w, and b at each iteration (for graphing)
+    {
     w.labels=NULL; for (i in 1:n_features) { w.labels = append(w.labels, paste0("w_",i)) }
     desc_hist = array(NA, c(num_iters,n_features+2)); colnames(desc_hist) = c("J",w.labels,"b")
     b = b_init
@@ -283,7 +277,6 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     # Message to console
      message(paste0(
       "Starting multivariate gradient descent :::
-        model      :   ",model_type, "
         alpha      :   ",alpha,"
         n examples :   ",n_examples,"
         n features :   ",n_features,"
@@ -296,13 +289,14 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     # Indices for last of all w's and the b (to improve readability in subsequent sections)
     idx_w = 2:(n_features+1)
     idx_b = (n_features+2)
+    }
     
     # Scale features
     if (scale) {
       message("Scaling features..")
       for (i in 1:n_features) { 
       message("On x_",i,", unscaled |max-min| = ",diff(range(x[,i]))) }
-      x = scale(x)
+      x = as.data.frame(scale(x)) # h.machinelearning.gradient and _.cost expect a data frame
       for (i in 1:n_features) { 
       message("On x_",i,", the newly scaled |max-min| = ",diff(range(x[,i]))) }
       message("The range of the scaled features should now be more similar. Is that right?")
@@ -318,8 +312,8 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
       
       # Calculate the gradient and update the parameters using gradient_function
       gradient = h.machinelearning.gradient(x, y, w, b)
-      dj_dw=gradient[[1]]
-      dj_db=gradient[[2]]
+      dj_dw = gradient[[1]]
+      dj_db = gradient[[2]]
       
       # Update parameters
       w = w - alpha * dj_dw
@@ -335,7 +329,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
                           different parameters.")) }
       
       # Do we have convergence?
-      if (desc_hist[i,1] < conv_crit) {
+      if (desc_hist[i,"J"] < conv_crit) {
         
         # Remove all NA
         desc_hist<-na.omit(desc_hist)
@@ -350,25 +344,27 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
       }
       
       # Do we have divergence?
-      if (any(desc_hist[i,] > div_crit | desc_hist[i,] == -Inf)) {
+      if (desc_hist[i,"J"] > div_crit | abs(desc_hist[i,"J"]) == Inf) {
         
         # Remove all NA
         desc_hist<-na.omit(desc_hist)
         
-        if (i == 1) {
-          stop(paste0("
-    Gradient descent has diverged after 1 iteration. Does that sound right?
-    w (",signif(desc_hist[i,idx_w],digits=sigdigs),") and b (",signif(desc_hist[i,idx_b],digits=sigdigs),"), with a cost (J_wb) of ",signif(desc_hist[i,1],digits=sigdigs),"."))
-        } else {
-          stop(paste0("
-    Gradient descent has diverged after ",i," iterations.
-    w (",signif(desc_hist[i,idx_w],digits=sigdigs),") and b (",signif(desc_hist[i,idx_b],digits=sigdigs),"), with a cost (J_wb) of ",signif(desc_hist[i,1],digits=sigdigs),"."))
-        }
+        # Divergence message
+        message("
+                
+                Divergence criterion reached!
+                ")
+        message(paste0(" w: ",signif(desc_hist[i,idx_w],digits=sigdigs)))
+        message(paste0(" b: ",signif(desc_hist[i,idx_b],digits=sigdigs)))
+        message(paste0(" J: ",signif(desc_hist[i,1],digits=sigdigs)))
+        
+        stop(paste0("
+    Gradient descent has diverged after ",i," iteration(s)."))
       }
       
       # Print cost every at intervals 10 times or as many iterations if < 10
       if (verbose) {
-        if ( i == 1 | i %% ceiling(num_iters/5) == 0) {
+        if (i == 1 | i %% ceiling(num_iters/5) == 0) {
           message(paste0("Iteration ",i," ::"))
           message(paste0("     dj_dw: ",signif(dj_dw,digits=sigdigs)))
           message(paste0("     dj_db: ",signif(dj_db,digits=sigdigs)))
@@ -380,6 +376,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     } # Descent end
 
     # Print final results to console
+    {
     message(paste0("
     
     Gradient descent found the following values:"))
@@ -388,6 +385,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     }
     message(paste0("      b:    ",signif(b,digits=sigdigs)))
     message(paste0("      J:    ",signif(desc_hist[num_iters,1],digits=sigdigs)))
+    }
     
     # Compute broader cost surface
     if (search) {
@@ -501,7 +499,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
         message(paste0("      J:    ",signif(grad_search$J[idx],digits=sigdigs)))  
         
       }
-    } # Search end
+    }
     
     # Plot cost?
     if (plot) {
@@ -569,12 +567,12 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
           
         } # End high iters, no search
       } # End high iters, with search
-    } # End plot
+    }
     
     # Finished!
     if (search) { return(list(w, b, desc_hist, idx)) } else { return(list(w, b, desc_hist)) }
     
-  } ### MULTIVARIATE GRADIENT DESCENT ###
+  }
 }
 
 

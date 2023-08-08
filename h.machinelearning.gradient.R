@@ -12,8 +12,11 @@ h.machinelearning.gradient <- function(x, y, w, b, method = NULL) {
       dj_dw (scalar)  : The gradient of the cost w.r.t. the parameters w
       dj_db (scalar)  : The gradient of the cost w.r.t. the parameter b"
   
-  # What are the number of features and number of training examples?
-  if (is.null(dim(x)[1])) { # Single predictor/feature
+  
+  # Single predictor/feature
+  if (is.null(dim(x))) {
+    
+    # Setup
     n_examples = length(x)
     dj_dw = 0
     dj_db = 0
@@ -26,31 +29,31 @@ h.machinelearning.gradient <- function(x, y, w, b, method = NULL) {
       dj_dw = dj_dw+dj_dw_i          # Update w and b
       dj_db = dj_db+dj_db_i
     }
+  }
+  
+  # Multiple predictors/features
+  if (!is.null(dim(x))) {
     
-    dj_dw = dj_dw / n_examples 
-    dj_db = dj_db / n_examples
-    
-    return(list(dj_dw, dj_db))
-    
-  } else { # Multiple predictors/features
+    # Setup
     n_examples = dim(x)[1]
     n_features = dim(x)[2]
     dj_dw = array(0, c(1,n_features))
     dj_db = 0
     
     # Compute gradient
-    for (i in 1:n_examples) {  
-      err = (as.numeric(x[i,]) %*% w + b)[1] - y[i] # Error from the model with n_features on the ith example
+    for (i in 1:n_examples) {
+      pred = sum(x[i,] * w + b) # Model prediction with current weights and bias
+      err = pred - y[i]         # Error from the model with n_features on the ith example
       for (j in 1:n_features) {
         dj_dw[j] = dj_dw[j] + err * x[i,j]
       }
       dj_db = dj_db + err
     }
-    
-    dj_dw = dj_dw / n_examples 
-    dj_db = dj_db / n_examples
-    
-    return(list(dj_dw, dj_db))
   }
+  
+  # Compute average over n_examples and return
+  dj_dw = dj_dw / n_examples 
+  dj_db = dj_db / n_examples
+  return(list(dj_dw, dj_db))
     
 }

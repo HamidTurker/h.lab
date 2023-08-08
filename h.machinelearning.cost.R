@@ -10,15 +10,18 @@ h.machinelearning.cost <- function(x, y, w, b, method = "descent") {
     
     Returns:
       total_cost (float): The cost of using w,b as the parameters for linear regression
-                          to fit the data points in x and y"
+                          to fit the data points y using weighted transformations of x"
   
-  
+
   # What method of computation are we using?
   if (method == "descent") {
     
-    # What are the number of features and number of training examples?
-    if (is.null(dim(x)[1])) { # Single predictor/feature
+    # Single predictor/feature
+    if (is.null(dim(x))) {
+      
+      # Setup
       n_examples = length(x)
+      if (!is.numeric(x) | !is.numeric(y) ) { stop("For single feature cost computation, both x and y need to be numeric vectors.") }
       
       # Compute sum of all squared errors
       cost_sum = 0
@@ -27,15 +30,19 @@ h.machinelearning.cost <- function(x, y, w, b, method = "descent") {
         sq_error = (f_wb - y[i]) ** 2 # Error of ith example's predicted score
         cost_sum = cost_sum + sq_error # Add ith error to total cost sum
       }
+    }
+    
+    # Multiple predictors/features
+    if (!is.null(dim(x))) {
       
-      
-    } else {
-      n_examples = dim(x)[1] # Multiple predictors/features
+      # Setup
+      n_examples = dim(x)[1]
+      if (!is.data.frame(x) | !is.numeric(y) ) { stop("For multiple feature cost computation, x should be a data frame and y should be a numeric vector.") }
       
       # Compute sum of all squared errors
       cost_sum = 0
       for (i in 1:n_examples) {
-        f_wb_i = (as.numeric(x[i,]) %*% w + b)[1] # Dot product of ith example plus bias
+        f_wb_i = sum(x[i,] * w + b) # Dot product of ith example plus bias
         sq_error = (f_wb_i - y[i]) ** 2 # Error for ith example's predicted score
         cost_sum = cost_sum + sq_error # Add ith error to total cost sum
       }
