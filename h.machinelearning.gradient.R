@@ -23,11 +23,11 @@ h.machinelearning.gradient <- function(x, y, w, b, method = NULL) {
     
     # Compute gradient
     for (i in 1:n_examples) {  
-      f_wb = w * x[i] + b            # Regression model with provided parameters
-      dj_dw_i = (f_wb - y[i]) * x[i] # Error * ith feature (part of the partial derivative)
-      dj_db_i = f_wb - y[i]          # Error for b
-      dj_dw = dj_dw+dj_dw_i          # Update w and b
-      dj_db = dj_db+dj_db_i
+      f_wb_i = w * x[i] + b             # Regression model with provided parameters
+      dj_dw_i = (f_wb_i - y[i]) * x[i]  # Error * ith feature (part of the partial derivative)
+      dj_db_i = f_wb_i - y[i]           # Error for b
+      dj_dw = dj_dw + dj_dw_i           # Update w and b
+      dj_db = dj_db + dj_db_i
     }
   }
   
@@ -42,12 +42,12 @@ h.machinelearning.gradient <- function(x, y, w, b, method = NULL) {
     
     # Compute gradient
     for (i in 1:n_examples) {
-      pred = sum(x[i,] * w + b) # Model prediction with current weights and bias
-      err = pred - y[i]         # Error from the model with n_features on the ith example
+      f_wb_i = sum(x[i,] * w) + b   # Model prediction with current weights and bias
+      error = f_wb_i - y[i]         # Error from the model with n_features on the ith example
       for (j in 1:n_features) {
-        dj_dw[j] = dj_dw[j] + err * x[i,j]
+        dj_dw[j] = dj_dw[j] + error * x[i,j]
       }
-      dj_db = dj_db + err
+      dj_db = dj_db + error
     }
   }
   
