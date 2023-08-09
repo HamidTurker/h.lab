@@ -127,8 +127,9 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
           message(paste0("     dj_dw: ",signif(dj_dw,digits=sigdigs),", dj_db: ",signif(dj_db,digits=sigdigs)))
           message(paste0("     w: ",signif(w,digits=sigdigs),", b: ",signif(b,digits=sigdigs)))
           message(paste0("     Cost (J_wb): ",signif(desc_hist[i,1],digits=sigdigs)))
-        } # Message end
-      } # Verbose end
+        }
+      }
+      
     } # Descent end
     
     # Print final results to console
