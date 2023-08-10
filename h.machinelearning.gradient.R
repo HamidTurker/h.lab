@@ -1,3 +1,7 @@
+# Source
+message("h.machinelearning.gradient :: v0.1: 2023 Aug 8")
+
+# Function
 h.machinelearning.gradient <- function(x, y, w, b, method = NULL) {
 
   "Compute the gradient for linear regression.

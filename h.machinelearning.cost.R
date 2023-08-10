@@ -1,3 +1,7 @@
+# Source
+message("h.machinelearning.cost :: v0.1: 2023 Aug 8")
+
+# Function
 h.machinelearning.cost <- function(x, y, w, b, method = "descent") {
 
   "Compute the cost function for linear regression.
