@@ -2,7 +2,7 @@
 message("h.machinelearning.gradient :: v0.1: 2023 Aug 8")
 
 # Function
-h.machinelearning.gradient <- function(x, y, w, b, method = NULL) {
+h.machinelearning.gradient <- function(x, y, w, b, method = NULL, model = "linear") {
 
   "Compute the gradient for linear regression.
   
@@ -11,6 +11,7 @@ h.machinelearning.gradient <- function(x, y, w, b, method = NULL) {
       y               : Predicted, target values (single vector/column)
       w,b (scalar)    : Model parameters  𝑓𝑤,𝑏(𝑥)=𝑤𝑥+𝑏 (with either single or multiple predictors 𝑤*𝑥)
       method (char)   : Method of computation
+      model (char)    : Regression model, can be 'linear', 'logistic'
   
     Returns:
       dj_dw (scalar)  : The gradient of the cost w.r.t. the parameters w
@@ -26,8 +27,12 @@ h.machinelearning.gradient <- function(x, y, w, b, method = NULL) {
     dj_db = 0
     
     # Compute gradient
-    for (i in 1:n_examples) {  
-      f_wb_i = w * x[i] + b             # Regression model with provided parameters
+    for (i in 1:n_examples) {
+      
+      # Regression model with provided parameters
+      if (model == "linear") { f_wb_i = w * x[i] + b }
+      if (model == "logistic") { f_wb_i = 1 / (1 + exp(-(w * x[i] + b))) }
+      
       dj_dw_i = (f_wb_i - y[i]) * x[i]  # Error * ith feature (part of the partial derivative)
       dj_db_i = f_wb_i - y[i]           # Error for b
       dj_dw = dj_dw + dj_dw_i           # Update w and b

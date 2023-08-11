@@ -20,6 +20,9 @@ h.machinelearning.cost <- function(x, y, w, b, method = "descent") {
   # What method of computation are we using?
   if (method == "descent") {
     
+    # Initialize cost
+    cost_sum = 0
+    
     # Single predictor/feature
     if (is.null(dim(x))) {
       
@@ -28,11 +31,20 @@ h.machinelearning.cost <- function(x, y, w, b, method = "descent") {
       if (!is.numeric(x) | !is.numeric(y) ) { stop("For single feature cost computation, both x and y need to be numeric vectors.") }
       
       # Compute sum of all squared errors
-      cost_sum = 0
-      for (i in 1:n_examples) {
-        f_wb_i = w * x[i] + b         # Product of ith example plus bias
-        error = (f_wb_i - y[i]) ** 2  # Error of ith example's predicted score
-        cost_sum = cost_sum + error   # Add ith error to total cost sum
+      if (model == "linear") {
+        for (i in 1:n_examples) {
+          f_wb_i = w * x[i] + b         # Product of ith example plus bias
+          error = (f_wb_i - y[i]) ** 2  # Error of ith example's predicted score
+          cost_sum = cost_sum + error   # Add ith error to total cost sum
+        }
+      }
+      if (model == "logistic") {
+        for (i in 1:n_examples) {
+          z_i = w * x[i] + b              # Product of ith example plus bias
+          f_wb_i = 1 / (1 + exp(-z_i))    # Sigmoid
+          error = -y[i] * log(f_wb_i) - (1 - y[i]) * log(1 - f_wb_i)  # Error of ith example's predicted score
+          cost_sum = cost_sum + error     # Add ith error to total cost sum
+        }
       }
     }
     
@@ -44,16 +56,26 @@ h.machinelearning.cost <- function(x, y, w, b, method = "descent") {
       if (!is.data.frame(x) | !is.numeric(y) ) { stop("For multiple feature cost computation, x should be a data frame and y should be a numeric vector.") }
       
       # Compute sum of all squared errors
-      cost_sum = 0
-      for (i in 1:n_examples) {
-        f_wb_i = sum(x[i,] * w) + b   # Dot product of ith example plus bias
-        error = (f_wb_i - y[i]) ** 2  # Error for ith example's predicted score
-        cost_sum = cost_sum + error   # Add ith error to total cost sum
+      if (model == "linear") {
+        for (i in 1:n_examples) {
+          f_wb_i = sum(x[i,] * w) + b   # Dot product of ith example plus bias
+          error = (f_wb_i - y[i]) ** 2  # Error for ith example's predicted score
+          cost_sum = cost_sum + error   # Add ith error to total cost sum
+        }
+      }
+      if (model == "logistic") {
+        for (i in 1:n_examples) {
+          z_i = sum(x[i,] * w) + b        # Dot product of ith example plus bias
+          f_wb_i = 1 / (1 + exp(-z_i))    # Sigmoid
+          error = -y[i] * log(f_wb_i) - (1 - y[i]) * log(1 - f_wb_i)  # Error of ith example's predicted score
+          cost_sum = cost_sum + error     # Add ith error to total cost sum
+        }
       }
     }
     
     # Compute average total cost and return
-    total_cost = cost_sum / (2*n_examples)
+    if (model == "linear") { total_cost = cost_sum / (2*n_examples) }
+    if (model == "logistic") { total_cost = cost_sum / (n_examples) }
     return(total_cost)
     
   }

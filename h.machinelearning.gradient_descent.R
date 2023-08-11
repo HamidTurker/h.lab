@@ -2,7 +2,8 @@
 message("h.machinelearning.gradient_descent :: v0.2: 2023 Aug 6")
 
 # Function
-h.machinelearning.gradient_descent <- function(x, y, w_init, b_init, 
+h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
+                                               model = "linear", 
                                                alpha, num_iters,
                                                scale = FALSE,
                                                max_iters = 1e+10,
@@ -19,7 +20,8 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     Args:
       x                     : Predictive values
       y                     : Predicted, target values
-      w_init,b_init (scalar): Initial values of model parameters  
+      w_init,b_init (scalar): Initial values of model parameters
+      model (char)          : Regression model, can be 'linear', 'logistic'
       alpha (float)         : Learning rate
       num_iters (int)       : Number of iterations to run gradient descent
       scale (bool)          : Scale the features? This is recommended (default = TRUE)
@@ -81,7 +83,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     for (i in 1:num_iters) {
       
       # Calculate the gradient and update the parameters using gradient_function
-      gradient = h.machinelearning.gradient(x, y, w, b)
+      gradient = h.machinelearning.gradient(x, y, w, b, model = model)
       dj_dw=gradient[[1]]
       dj_db=gradient[[2]]
       
@@ -91,7 +93,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
       
       # Save cost J and parameters w & b at each iteration
       if (i < max_iters) { # prevent resource exhaustion 
-        desc_hist[i,1] = h.machinelearning.cost(x, y, w, b) # Cost with w & b on this iteration
+        desc_hist[i,1] = h.machinelearning.cost(x, y, w, b, model = model) # Cost with w & b on this iteration
         desc_hist[i,2] = w # w on this iteration
         desc_hist[i,3] = b # b on this iteration
       } else { stop(paste0("Failed to converge. Search reached the maximum number of iterations (",max_iters,")!
@@ -174,7 +176,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
       
       # Search this space..
       for (i in 1:dim(grad_search)[1]) {
-        grad_search[i,3] = h.machinelearning.cost(x, y, grad_search[i,1], grad_search[i,2])
+        grad_search[i,3] = h.machinelearning.cost(x, y, grad_search[i,1], grad_search[i,2], model = model)
       }
       
       # Do the results (approximately) match?
@@ -312,7 +314,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     for (i in 1:num_iters) {
       
       # Calculate the gradient and update the parameters using gradient_function
-      gradient = h.machinelearning.gradient(x, y, w, b)
+      gradient = h.machinelearning.gradient(x, y, w, b, model = model)
       dj_dw = gradient[[1]]
       dj_db = gradient[[2]]
       
