@@ -13,7 +13,6 @@ source(paste0(hlab_dir,'h.machinelearning.cost.R'))
 source(paste0(hlab_dir,'h.machinelearning.gradient.R'))
 source(paste0(hlab_dir,'h.machinelearning.gradient_descent.R'))
 
-
 ##################
 ##### Week 1 #####
 ##################
@@ -141,7 +140,7 @@ Let's try fitting a non-linear curve. We'll start with a simple quadratic:  y = 
     
     # We can now plot this fitted line over the data itself.
     plot(training_set$x, training_set$y) # original data
-    lines(w_fit*training_set$x + b_fit, col="red") # our fitted line, simply plugging our fitted w,b into the model template:  y = w*x + b
+    lines(training_set$x, w_fit*training_set$x + b_fit, col="red") # our fitted line, simply plugging our fitted w,b into the model template:  y = w*x + b
     # Okay, that doesn't look to great unfortunately and our model's cost (of ~440) isn't great either.
     
     # Because we know that our y-values are polynomial, we can engineer a feature that has
@@ -208,7 +207,7 @@ Let's try fitting a non-linear curve. We'll start with a simple quadratic:  y = 
     w3_fit = grad_desc[[1]][3]
     b_fit = grad_desc[[2]]
     plot(1:20, training_set$y) # our data
-    lines(w1_fit*training_set$x1 + w2_fit*training_set$x2 + w3_fit*training_set$x3 + b_fit, col="blue") # our model
+    lines(1:20, w1_fit*training_set$x1 + w2_fit*training_set$x2 + w3_fit*training_set$x3 + b_fit, col="blue") # our model
     # Gradient descent is telling us that our final model should be 'y = .08*x + .54*x^2 + .03*x^3 + .0106'
     # In other words, the algorithm is pushing for an emphasis on the second degree term (x^2) and minimizing
     # the impact of the first and third terms. If we ran the algorithm longer, it would further diminish the
@@ -229,7 +228,7 @@ Let's try fitting a non-linear curve. We'll start with a simple quadratic:  y = 
       b:    0.123438
       J:    14016"
     w1_fit = grad_desc[[1]][1]; w2_fit = grad_desc[[1]][2]; w3_fit = grad_desc[[1]][3]; b_fit = grad_desc[[2]]
-    lines(w1_fit*scale(training_set$x1) + w2_fit*scale(training_set$x2) + w3_fit*scale(training_set$x3) + b_fit, col="red")
+    lines(1:20, w1_fit*scale(training_set$x1) + w2_fit*scale(training_set$x2) + w3_fit*scale(training_set$x3) + b_fit, col="red")
     # What happened here?
     
     # What if we change the learning rate to be a bigger number?
@@ -289,6 +288,7 @@ Let's try fitting a non-linear curve. We'll start with a simple quadratic:  y = 
     # What are the features and what's being predicted?
     features_set=training_set[,1:13] # The first 13 columns, which are our 13 features
     target_set=training_set[,"y"]
+    plot(xvals, training_set$y) # our data
     
     # Parameters
     n_iters=1e5
@@ -302,7 +302,7 @@ Let's try fitting a non-linear curve. We'll start with a simple quadratic:  y = 
                                                    alpha=alpha, num_iters=n_iters, 
                                                    verbose=T, search=F, plot=F,
                                                    scale=T)
-    "    Gradient descent found the following values:
+    "Gradient descent found the following values:
       w_1:  -3.81903
       w_2:  3.76706
       w_3:  6.43265
@@ -318,6 +318,12 @@ Let's try fitting a non-linear curve. We'll start with a simple quadratic:  y = 
       w_13:  -2.13653
       b:    -0.00728719
       J:    0.0172613"
+    lines(xvals, -3.81903*scale(training_set$x1) + 3.76706*scale(training_set$x2) + 6.43265*scale(training_set$x3) +
+                 0.298999*scale(training_set$x4) + -4.22198*scale(training_set$x5) + -4.99168*scale(training_set$x6) + 
+                 -3.21612*scale(training_set$x7) + -0.570534*scale(training_set$x8) + 1.69477*scale(training_set$x9) + 
+                 2.85959*scale(training_set$x10) + 2.61382*scale(training_set$x11) + 0.91283*scale(training_set$x12) +
+                -2.13653*scale(training_set$x13) + -0.00728719, col="blue")
+    # Not bad!
     
     # There are ways to speed up the process in R, but that matter lies beyond the scope of these sessions.
     # R's focus is on running algebraic computations in a stable and accurate manner, rather than with a
@@ -334,45 +340,140 @@ Let's try fitting a non-linear curve. We'll start with a simple quadratic:  y = 
 ##### Week 3 #####
 ##################
 {
+  "Classification"
   # In addition to predicting values using a model, another common machine learning problem is that of
   # classifying data points into categories. For classification problems, our linear regression approach
   # is - sadly - not very suited. Instead, we'll need something called logistic regression.
   
   # Let's see how they both perform by setting up some data (x, y) that has groupings (g) and a color map (c)
-  training_set1 <- data.frame(
+  training_set1a <- data.frame(
     x = c(0, 1, 2, 3, 4, 5),
     g = c(0, 0, 0, 1, 1, 1),
-    c = c("red","red","red","blue","blue","blue")
+    c = c("blue","blue","blue","red","red","red")
   )
-  plot(training_set1$x, training_set1$g, col=training_set1$c, pch=16) # One variable (x)
+  plot(training_set1a$x, training_set1a$g, col=training_set1a$c, pch=16) # One variable (x)
   
   # Run gradient descent
-  grad_desc = h.machinelearning.gradient_descent(x=training_set1$x, y=training_set1$g,
+  grad_desc = h.machinelearning.gradient_descent(x=training_set1a$x, y=training_set1a$g,
                                                  w_init=0, b_init=0, 
-                                                 alpha=1e-2, num_iters=1e6, 
-                                                 verbose=T, search=F, plot=F)
+                                                 alpha=.1, num_iters=1e6, 
+                                                 verbose=T, search=T, plot=T)
   "Gradient descent found w (0.257143) and b (-0.142857), with a cost (J_wb) of 0.0285714."
-  lines(0.257143*training_set1$x - 0.142857, lwd=4) # Fitted linear regression line
+  lines(training_set1a$x, 0.257143*training_set1a$x + -0.142857, lwd=4) # Fitted linear regression line
+  # Note, lines() takes an x and y argument, so we first pass it the independent x values and then the model
+  
   # We can then draw a threshold, say at g = .5
-  abline(h=.5)
+  abline(h=.5) # abline will now draw a horizontal line at .5 (hence, h=.5)
   # Next, for example, we decide to classify points that lie to one side of the intersection
   # between our threshold and our regression line will be classified as one group and points
-  # on the other side as part of the other group. In this case, the first blue data point
-  # at x=3 would then be misclassified as belonging to the red group.
+  # on the other side as part of the other group.
+  f1 <- function(x) 0.257143*x + -0.142857 # Our fitted model
+  f2 <- function() .5                      # Our arbitrary threshold
   
+  uniroot(function(x) f1(x)-f2(),c(0,5))$root # This asks for the intersection (root) between
+  # two functions in the interval 0 to 5. And indeed, it finds x is 2.499998 -- that looks right.
+  abline(v=uniroot(function(x) f1(x)-f2(),c(0,5))$root) # abline will now draw a vertical line at ~2.5
+  # In this case, all data are classified correctly (blue on the left side of ~2.5, red on the right side).
   
-  
-  training_set2 <- data.frame(
-    x1 = c(.5, 1, 1, 1.5, 2, 3),
-    x2 = c(1.5, 1, 2.5, .5, 2, .5),
-    g = c(0, 0, 1, 0, 1, 1),
-    c = c("red","red","blue","red","blue","blue")
+  # But now let's add another data point
+  training_set1b <- data.frame(
+    x = c(0, 1, 2, 3, 4, 5, 10),
+    g = c(0, 0, 0, 1, 1, 1, 1),
+    c = c("blue","blue","blue","red","red","red","red")
   )
-  plot(training_set2$x1, training_set2$x2, col=training_set2$c, pch=16)  # Two variables (x1, x2)
+  plot(training_set1b$x, training_set1b$g, col=training_set1b$c, pch=16) # One variable (x)
   
+  # Run gradient descent
+  grad_desc = h.machinelearning.gradient_descent(x=training_set1b$x, y=training_set1b$g,
+                                                 w_init=0, b_init=0, 
+                                                 alpha=.01, num_iters=1e6, 
+                                                 verbose=T, search=F, plot=F)
+  "Gradient descent found w (0.117391) and b (0.152174), with a cost (J_wb) of 0.057764."
+  
+  # Plot the model
+  lines(training_set1b$x, 0.117391*training_set1b$x + -0.152174, lwd=4) # Fitted linear regression line
+  abline(h=.5) # Threshold
+  f1 <- function(x) 0.117391*x + -0.152174 # Our fitted model
+  f2 <- function() .5                      # Our arbitrary threshold
+  abline(v=uniroot(function(x) f1(x)-f2(),c(0,10))$root) # abline will now draw a vertical line at ~5.56
+  
+  # Okay, that looks bad! We're now misclassifying the original 3 red data points and only capturing the
+  # new data point that we just introduced. Clearly, we need a better approach than linear regression.
+  
+  "Logistic regression"
+  # Enter logistic regression, one of the (if actually the) most used classification algorithm in the world!
+  # Instead of a linear model 'y(x) = w*x + b', we will use a so-called sigmoid function (a.k.a. logistic
+  # function). The sigmoid function is 'g(z) = 1 / (1+e^-z)', where 0 < g(z) < 1 (so, y can only take on values
+  # between 0 and 1). Importantly, the z variable in the sigmoid function is actually y(x), the output of the
+  # linear regression function. Let's take a closer look, using training_set2.
+  
+  
+  
+  
+
   
   
 }
+
+
+
+
+
+
+
+training_set2 <- data.frame(
+  x1 = c(.5, 1, 1, 1.5, 2, 3),
+  x2 = c(1.5, 1, 2.5, .5, 2, .5),
+  g = c(0, 0, 1, 0, 1, 1),
+  c = c("red","red","blue","red","blue","blue")
+)
+plot(training_set2$x1, training_set2$x2, col=training_set2$c, pch=16)  # Two variables (x1, x2)
+
+features_set=training_set2[,c("x1","x2")]
+target_set=training_set2[,"g"]
+
+x=features_set; y=target_set;
+w_init=c(1,1); b_init=-3; 
+alpha=.1; num_iters=1e6; 
+verbose=T; search=F; plot=F
+
+desc_hist = array(NA, c(num_iters,3)); colnames(desc_hist) = c("J","w","b")
+n_examples = length(x)
+b = b_init
+w = w_init
+i = 1
+
+
+
+
+
+
+
+# What about with 2 variables? Things get even more complicated.
+training_set2 <- data.frame(
+  x1 = c(.5, 1, 1, 1.5, 2, 3),
+  x2 = c(1.5, 1, 2.5, .5, 2, .5),
+  g = c(0, 0, 1, 0, 1, 1),
+  c = c("red","red","blue","red","blue","blue")
+)
+plot(training_set2$x1, training_set2$x2, col=training_set2$c, pch=16)  # Two variables (x1, x2)
+
+# Run gradient descent
+grad_desc = h.machinelearning.gradient_descent(x=training_set2$x1, y=training_set2$x2,
+                                               w_init=0, b_init=0, 
+                                               alpha=.1, num_iters=1e6, 
+                                               verbose=T, search=F, plot=F)
+"Gradient descent found w (-0.375) and b (1.89583), with a cost (J_wb) of 0.230903."
+plot(training_set2$x1, training_set2$x2, col=training_set2$c, pch=16) # Two variables (x1, x2)
+lines(training_set2$x1, -0.375*training_set2$x1 + 1.89583, lwd=4) # Fitted linear regression line
+
+
+
+
+
+
+
+
 
 
 
