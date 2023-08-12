@@ -4,7 +4,7 @@ message("h.machinelearning.gradient :: v0.1: 2023 Aug 8")
 # Function
 h.machinelearning.gradient <- function(x, y, w, b, method = NULL, model = "linear") {
 
-  "Compute the gradient for linear regression.
+  "Compute the cost gradient of a regression.
   
     Args:
       x               : Predictive values (rows = examples, columns = features)
@@ -29,14 +29,17 @@ h.machinelearning.gradient <- function(x, y, w, b, method = NULL, model = "linea
     # Compute gradient
     for (i in 1:n_examples) {
       
-      # Regression model with provided parameters
-      if (model == "linear") { f_wb_i = w * x[i] + b }
-      if (model == "logistic") { f_wb_i = 1 / (1 + exp(-(w * x[i] + b))) }
+      # Model prediction with current weight and bias
+      if (model == "linear")    { f_wb_i = w * x[i] + b }    
+      if (model == "logistic")  { f_wb_i = 1 / (1 + exp(-(w * x[i] + b))) }
       
-      dj_dw_i = (f_wb_i - y[i]) * x[i]  # Error * ith feature (part of the partial derivative)
-      dj_db_i = f_wb_i - y[i]           # Error for b
-      dj_dw = dj_dw + dj_dw_i           # Update w and b
+      error_i = f_wb_i - y[i]     # Error for the ith example
+      dj_dw_i = error_i * x[i]    # Error times ith example, part of the partial derivative of w
+      dj_db_i = error_i           # Error for b is simply error_i
+      
+      dj_dw = dj_dw + dj_dw_i     # Update w and b by adding the ith error to running sum
       dj_db = dj_db + dj_db_i
+      
     }
   }
   
@@ -51,12 +54,16 @@ h.machinelearning.gradient <- function(x, y, w, b, method = NULL, model = "linea
     
     # Compute gradient
     for (i in 1:n_examples) {
-      f_wb_i = sum(x[i,] * w) + b   # Model prediction with current weights and bias
-      error = f_wb_i - y[i]         # Error from the model with n_features on the ith example
+      
+      # Model prediction with current weight and bias
+      if (model == "linear")    { f_wb_i = sum(w * x[i,]) + b } # Dot product + b
+      if (model == "logistic")  { f_wb_i = 1 / (1 + exp(- (sum(w * x[i,]) + b) )) } # Dot product + b.. fed into the sigmoid function
+      
+      error_i = f_wb_i - y[i]         # Error for the ith example
       for (j in 1:n_features) {
-        dj_dw[j] = dj_dw[j] + error * x[i,j]
+        dj_dw[j] = dj_dw[j] + error_i * x[i,j]
       }
-      dj_db = dj_db + error
+      dj_db = dj_db + error_i
     }
   }
   

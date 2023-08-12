@@ -34,9 +34,9 @@ h.machinelearning.cost <- function(x, y, w, b, method = "descent", model = "line
       # Compute sum of all errors
       if (model == "linear") {
         for (i in 1:n_examples) {
-          f_wb_i = w * x[i] + b         # Product of ith example plus bias
-          error = (f_wb_i - y[i]) ** 2  # Error of ith example's predicted score
-          cost_sum = cost_sum + error   # Add ith error to total cost sum
+          f_wb_i = w * x[i] + b           # Product of ith example plus bias
+          error = (f_wb_i - y[i]) ** 2    # Error of ith example's predicted score
+          cost_sum = cost_sum + error     # Add ith error to total cost sum
         }
       }
       if (model == "logistic") {
@@ -59,9 +59,9 @@ h.machinelearning.cost <- function(x, y, w, b, method = "descent", model = "line
       # Compute sum of all errors
       if (model == "linear") {
         for (i in 1:n_examples) {
-          f_wb_i = sum(x[i,] * w) + b   # Dot product of ith example plus bias
-          error = (f_wb_i - y[i]) ** 2  # Error for ith example's predicted score
-          cost_sum = cost_sum + error   # Add ith error to total cost sum
+          f_wb_i = sum(x[i,] * w) + b     # Dot product of ith example plus bias
+          error = (f_wb_i - y[i]) ** 2    # Error for ith example's predicted score
+          cost_sum = cost_sum + error     # Add ith error to total cost sum
         }
       }
       if (model == "logistic") {

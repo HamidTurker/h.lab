@@ -4,7 +4,7 @@ message("h.machinelearning.gradient_descent :: v0.2: 2023 Aug 6")
 # Function
 h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
                                                model = "linear", 
-                                               alpha, num_iters,
+                                               alpha, n_iters,
                                                scale = FALSE,
                                                max_iters = 1e+10,
                                                conv_crit = 1e-50,
@@ -15,7 +15,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
                                                verbose=TRUE, plot=TRUE) {
 
   " Performs gradient descent to fit w,b. Updates w,b by taking 
-    num_iters gradient steps with learning rate alpha.
+    n_iters gradient steps with learning rate alpha.
     
     Args:
       x                     : Predictive values
@@ -23,7 +23,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
       w_init,b_init (scalar): Initial values of model parameters
       model (char)          : Regression model, can be 'linear', 'logistic'
       alpha (float)         : Learning rate
-      num_iters (int)       : Number of iterations to run gradient descent
+      n_iters (int)         : Number of iterations to run gradient descent
       scale (bool)          : Scale the features? This is recommended (default = TRUE)
       max_iters (int)       : Maximum number of iterations to run gradient descent
       conv_crit (float)     : Minimum cost criterion under which descent is considered converged.
@@ -58,7 +58,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     
     # Initialize array for cost (J), w, and b at each iteration (for graphing)
     {
-      desc_hist = array(NA, c(num_iters,3)); colnames(desc_hist) = c("J","w","b")
+      desc_hist = array(NA, c(n_iters,3)); colnames(desc_hist) = c("J","w","b")
       n_examples = length(x)
       b = b_init
       w = w_init
@@ -80,7 +80,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     }
     
     # Gradient descent
-    for (i in 1:num_iters) {
+    for (i in 1:n_iters) {
       
       # Calculate the gradient and update the parameters using gradient_function
       gradient = h.machinelearning.gradient(x, y, w, b, model = model)
@@ -124,7 +124,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
       
       # Print cost every at intervals 10 times or as many iterations if < 10
       if (verbose) {
-        if ( i == 1 | i %% ceiling(num_iters/5) == 0) {
+        if ( i == 1 | i %% ceiling(n_iters/5) == 0) {
           message(paste0("Iteration ",i," ::"))
           message(paste0("     dj_dw: ",signif(dj_dw,digits=sigdigs),", dj_db: ",signif(dj_db,digits=sigdigs)))
           message(paste0("     w: ",signif(w,digits=sigdigs),", b: ",signif(b,digits=sigdigs)))
@@ -198,12 +198,12 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     # Plot cost?
     if (plot) {
       
-      # With low num_iters, make one cost curve
-      if (num_iters < 2000) {
-        plot(1:num_iters, desc_hist[,1], type="l",
+      # With low n_iters, make one cost curve
+      if (n_iters < 2000) {
+        plot(1:n_iters, desc_hist[,1], type="l",
              main="Cost over iterations", xlab="Iteration", ylab="Cost")
         
-        # If we have high num_iters..
+        # If we have high n_iters...
       } else {
         if (search) { # ..and we ran a broad search..
           par(mfrow=c(2,1))
@@ -214,7 +214,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
                main="Early search", xlab="Iteration", ylab="Cost")
           
           # Late search
-          plot(splitval:num_iters, desc_hist[splitval:num_iters,1], type="l", 
+          plot(splitval:n_iters, desc_hist[splitval:n_iters,1], type="l", 
                main="Late search", xlab="Iteration", ylab="Cost")
           
           # 2d surface
@@ -250,7 +250,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
                main="Early search", xlab="Iteration", ylab="Cost")
           
           # Late search
-          plot(splitval:num_iters, desc_hist[splitval:num_iters,1], type="l",
+          plot(splitval:n_iters, desc_hist[splitval:n_iters,1], type="l",
                main="Late search", xlab="Iteration", ylab="Cost")
           
         } # End high iters, no search
@@ -273,7 +273,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     # Initialize array for cost (J), w, and b at each iteration (for graphing)
     {
     w.labels=NULL; for (i in 1:n_features) { w.labels = append(w.labels, paste0("w_",i)) }
-    desc_hist = array(NA, c(num_iters,n_features+2)); colnames(desc_hist) = c("J",w.labels,"b")
+    desc_hist = array(NA, c(n_iters,n_features+2)); colnames(desc_hist) = c("J",w.labels,"b")
     b = b_init
     w = w_init
     
@@ -311,7 +311,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     }
     
     # Gradient descent
-    for (i in 1:num_iters) {
+    for (i in 1:n_iters) {
       
       # Calculate the gradient and update the parameters using gradient_function
       gradient = h.machinelearning.gradient(x, y, w, b, model = model)
@@ -324,7 +324,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
       
       # Save cost J and parameters w & b at each iteration
       if (i < max_iters) { # prevent resource exhaustion 
-        desc_hist[i,1] = h.machinelearning.cost(x, y, w, b) # Cost with w & b on this iteration
+        desc_hist[i,1] = h.machinelearning.cost(x, y, w, b, model = model) # Cost with w & b on this iteration
         desc_hist[i,idx_w] = w # w on this iteration
         desc_hist[i,idx_b] = b # b on this iteration
       } else { stop(paste0("Failed to converge. Search reached the maximum number of iterations (",max_iters,")!
@@ -367,7 +367,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
       
       # Print cost every at intervals 10 times or as many iterations if < 10
       if (verbose) {
-        if (i == 1 | i %% ceiling(num_iters/5) == 0) {
+        if (i == 1 | i %% ceiling(n_iters/5) == 0) {
           message(paste0("Iteration ",i," ::"))
           message(paste0("     dj_dw: ",signif(dj_dw,digits=sigdigs)))
           message(paste0("     dj_db: ",signif(dj_db,digits=sigdigs)))
@@ -387,7 +387,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     message(paste0("      w_",i,":  ",signif(w[i],digits=sigdigs)))
     }
     message(paste0("      b:    ",signif(b,digits=sigdigs)))
-    message(paste0("      J:    ",signif(desc_hist[num_iters,1],digits=sigdigs)))
+    message(paste0("      J:    ",signif(desc_hist[n_iters,1],digits=sigdigs)))
     }
     
     # Compute broader cost surface
@@ -424,8 +424,8 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
           } else {
             message(paste0("Variance found on w_",i," was > 10 (",signif(w_var,digits=sigdigs),"). Adjusting search space accordingly.."))
             
-            search_bounds[1,i] = floor(desc_hist[num_iters,(1+i)])-highvar_bound # lower for each feature w
-            search_bounds[2,i] = floor(desc_hist[num_iters,(1+i)])+highvar_bound # upper for each feature w
+            search_bounds[1,i] = floor(desc_hist[n_iters,(1+i)])-highvar_bound # lower for each feature w
+            search_bounds[2,i] = floor(desc_hist[n_iters,(1+i)])+highvar_bound # upper for each feature w
             foo[[i]] = c(seq(search_bounds[1,i],search_bounds[2,i])) # Append final data frame
           }
         } else { # b..
@@ -448,8 +448,8 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
           } else {
             message(paste0("Variance found on b was > 10 (",signif(b_var,digits=sigdigs),"). Adjusting search space accordingly.."))
             
-            search_bounds[1,i] = floor(desc_hist[num_iters,(2+n_features)])-highvar_bound # lower for each feature w
-            search_bounds[2,i] = floor(desc_hist[num_iters,(2+n_features)])+highvar_bound # upper for each feature w
+            search_bounds[1,i] = floor(desc_hist[n_iters,(2+n_features)])-highvar_bound # lower for each feature w
+            search_bounds[2,i] = floor(desc_hist[n_iters,(2+n_features)])+highvar_bound # upper for each feature w
             foo[[i]] = c(seq(search_bounds[1,i],search_bounds[2,i])) # Append final data frame
           }
         }
@@ -468,11 +468,11 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
         for (j in 1:n_features) {
           w_vec = append(w_vec, grad_search[i,j+1])
         }
-        grad_search$J[i] = h.machinelearning.cost(x, y, w_vec, grad_search$b[i])
+        grad_search$J[i] = h.machinelearning.cost(x, y, w_vec, grad_search$b[i], model = model)
         
         # Print cost every at intervals 10 times or as many iterations if < 10
         if (verbose) {
-          if ( i == 1 | i %% ceiling(num_iters/5) == 0) {
+          if ( i == 1 | i %% ceiling(n_iters/5) == 0) {
             message(paste0("Iteration ",i,"/",dim(grad_search)[1]," (~",signif((i/dim(grad_search)[1])*100,digits=5)," %) ::"))
             message(paste0("     w: ",signif(grad_search[i,2:(1+n_features)],digits=sigdigs)))
             message(paste0("     b: ",signif(grad_search$b[i],digits=sigdigs)))
@@ -507,12 +507,12 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     # Plot cost?
     if (plot) {
       
-      # With low num_iters, make one cost curve
-      if (num_iters < 2000) {
-        plot(1:num_iters, desc_hist[,1], type="l",
+      # With low n_iters, make one cost curve
+      if (n_iters < 2000) {
+        plot(1:n_iters, desc_hist[,1], type="l",
              main="Cost over iterations", xlab="Iteration", ylab="Cost")
         
-        # If we have high num_iters..
+        # If we have high n_iters..
       } else {
         if (search) { # ..and we ran a broad search..
           par(mfrow=c(2,1))
@@ -523,7 +523,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
                main="Early search", xlab="Iteration", ylab="Cost")
           
           # Late search
-          plot(splitval:num_iters, desc_hist[splitval:num_iters,1], type="l", 
+          plot(splitval:n_iters, desc_hist[splitval:n_iters,1], type="l", 
                main="Late search", xlab="Iteration", ylab="Cost")
           
           # 2d surface
@@ -565,7 +565,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
                main="Early search", xlab="Iteration", ylab="Cost")
           
           # Late search
-          plot(splitval:num_iters, desc_hist[splitval:num_iters,1], type="l",
+          plot(splitval:n_iters, desc_hist[splitval:n_iters,1], type="l",
                main="Late search", xlab="Iteration", ylab="Cost")
           
         } # End high iters, no search
