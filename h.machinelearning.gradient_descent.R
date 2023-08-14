@@ -11,6 +11,8 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
                                                div_crit = 1e+100,
                                                search=FALSE, searchspace=3,
                                                cost.method = NULL, 
+                                               cost.lambda_w = 0,
+                                               cost.lambda_b = 0,
                                                gradient.method = NULL,
                                                verbose=TRUE, plot=TRUE) {
 
@@ -35,6 +37,9 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
                               between w+/-searchspace*var(desc_hist of w) and b+/-searchspace*var(desc_hist of b)
                               (values > 4 can lead to long searches!)
       cost.method           : Choice of method to be called by h.machinelearning.cost [optional]
+      cost.lambda_w         : Regularization parameter for feature coefficients w (lower is more overfit, higher is more underfit).
+                              Value must be >= 0.
+      cost.lambda_b         : Regularization parameter for b. Value must be >= 0.
       gradient.method       : Choice of method to be called by h.machinelearning.gradient [optional]
       verbose (bool)        : If TRUE, print values of w and b to the console every 2000 iterations
       plot (bool)           : If TRUE, plot the cost function
@@ -66,6 +71,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
       # Message to console
       message(paste0(
         "Starting univariate gradient descent :::
+        model      :   ",model,"
         alpha      :   ",alpha,"
         n examples :   ",n_examples,"
         n features :   1
@@ -93,7 +99,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
       
       # Save cost J and parameters w & b at each iteration
       if (i < max_iters) { # prevent resource exhaustion 
-        desc_hist[i,1] = h.machinelearning.cost(x, y, w, b, model = model) # Cost with w & b on this iteration
+        desc_hist[i,1] = h.machinelearning.cost(x, y, w, b, model=model, lambda_w=cost.lambda_w, lambda_b=cost.lambda_b) # Cost with w & b on this iteration
         desc_hist[i,2] = w # w on this iteration
         desc_hist[i,3] = b # b on this iteration
       } else { stop(paste0("Failed to converge. Search reached the maximum number of iterations (",max_iters,")!
@@ -138,7 +144,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     {
     message(paste0("
                  
-    Gradient descent found w (",signif(w,digits=sigdigs),") and b (",signif(b,digits=sigdigs),"), with a cost (J_wb) of ",signif(desc_hist[i,1],digits=sigdigs),"."))
+    Gradient descent (",model,") found w (",signif(w,digits=sigdigs),") and b (",signif(b,digits=sigdigs),"), with a cost (J_wb) of ",signif(desc_hist[i,1],digits=sigdigs),"."))
     }
       
     if (scale) {
@@ -176,7 +182,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
       
       # Search this space..
       for (i in 1:dim(grad_search)[1]) {
-        grad_search[i,3] = h.machinelearning.cost(x, y, grad_search[i,1], grad_search[i,2], model = model)
+        grad_search[i,3] = h.machinelearning.cost(x, y, grad_search[i,1], grad_search[i,2], model=model, lambda_w=cost.lambda_w, lambda_b=cost.lambda_b)
       }
       
       # Do the results (approximately) match?
@@ -280,6 +286,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     # Message to console
      message(paste0(
       "Starting multivariate gradient descent :::
+        model      :   ",model,"
         alpha      :   ",alpha,"
         n examples :   ",n_examples,"
         n features :   ",n_features,"
@@ -324,7 +331,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
       
       # Save cost J and parameters w & b at each iteration
       if (i < max_iters) { # prevent resource exhaustion 
-        desc_hist[i,1] = h.machinelearning.cost(x, y, w, b, model = model) # Cost with w & b on this iteration
+        desc_hist[i,1] = h.machinelearning.cost(x, y, w, b, model=model, lambda_w=cost.lambda_w, lambda_b=cost.lambda_b) # Cost with w & b on this iteration
         desc_hist[i,idx_w] = w # w on this iteration
         desc_hist[i,idx_b] = b # b on this iteration
       } else { stop(paste0("Failed to converge. Search reached the maximum number of iterations (",max_iters,")!
@@ -382,7 +389,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
     {
     message(paste0("
     
-    Gradient descent found the following values:"))
+    Gradient descent (",model,") found the following values:"))
     for (i in 1:n_features) {
     message(paste0("      w_",i,":  ",signif(w[i],digits=sigdigs)))
     }
@@ -468,7 +475,7 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
         for (j in 1:n_features) {
           w_vec = append(w_vec, grad_search[i,j+1])
         }
-        grad_search$J[i] = h.machinelearning.cost(x, y, w_vec, grad_search$b[i], model = model)
+        grad_search$J[i] = h.machinelearning.cost(x, y, w_vec, grad_search$b[i], model=model, lambda_w=cost.lambda_w, lambda_b=cost.lambda_b)
         
         # Print cost every at intervals 10 times or as many iterations if < 10
         if (verbose) {
