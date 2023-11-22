@@ -90,8 +90,11 @@ h.machinelearning.cost <- function(x, y, w, b, model = "linear", lambda_w = 0, l
   }
   
   # Compute average total cost and return
-  if (model == "linear") { cost = cost_sum / (2*n_examples); reg_w = (lambda_w/(2*n_examples)) * reg_w_sum; reg_b = (lambda_b/(2*n_examples)) * reg_b_sum  }
+  if (model == "linear") { cost = cost_sum / (2*n_examples)}
   if (model == "logistic") { cost = cost_sum / n_examples }
+  reg_w = (lambda_w/(2*n_examples)) * reg_w_sum
+  reg_b = (lambda_b/(2*n_examples)) * reg_b_sum
+  
   total_cost = cost + reg_w + reg_b
   return(total_cost)
   

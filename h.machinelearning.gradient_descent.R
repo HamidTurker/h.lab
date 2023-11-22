@@ -99,15 +99,18 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
       
       # Save cost J and parameters w & b at each iteration
       if (i < max_iters) { # prevent resource exhaustion 
-        desc_hist[i,1] = h.machinelearning.cost(x, y, w, b, model=model, lambda_w=cost.lambda_w, lambda_b=cost.lambda_b) # Cost with w & b on this iteration
-        desc_hist[i,2] = w # w on this iteration
-        desc_hist[i,3] = b # b on this iteration
+        desc_hist[i,"J"] = h.machinelearning.cost(x, y, w, b, model=model, lambda_w=cost.lambda_w, lambda_b=cost.lambda_b) # Cost with w & b on this iteration
+        desc_hist[i,"w"] = w # w on this iteration
+        desc_hist[i,"b"] = b # b on this iteration
+        
+        if (is.na(desc_hist[i,"J"])) { stop("h.machinelearning.cost returned a cost of NaN. Perhaps try a different alpha.") }
+        
       } else { stop(paste0("Failed to converge. Search reached the maximum number of iterations (",max_iters,")!
                           Set max_iters to a higher value to continue trying with current parameters. Or, try
                           different parameters.")) }
       
       # Do we have convergence?
-      if (desc_hist[i,1] < conv_crit) {
+      if (desc_hist[i,"J"] < conv_crit) {
         
         # Remove all NA
         desc_hist<-na.omit(desc_hist)
@@ -331,9 +334,12 @@ h.machinelearning.gradient_descent <- function(x, y, w_init, b_init,
       
       # Save cost J and parameters w & b at each iteration
       if (i < max_iters) { # prevent resource exhaustion 
-        desc_hist[i,1] = h.machinelearning.cost(x, y, w, b, model=model, lambda_w=cost.lambda_w, lambda_b=cost.lambda_b) # Cost with w & b on this iteration
+        desc_hist[i,"J"] = h.machinelearning.cost(x, y, w, b, model=model, lambda_w=cost.lambda_w, lambda_b=cost.lambda_b) # Cost with w & b on this iteration
         desc_hist[i,idx_w] = w # w on this iteration
         desc_hist[i,idx_b] = b # b on this iteration
+        
+        if (is.na(desc_hist[i,"J"])) { stop("h.machinelearning.cost returned a cost of NaN. Perhaps try a different alpha.") }
+        
       } else { stop(paste0("Failed to converge. Search reached the maximum number of iterations (",max_iters,")!
                           Set max_iters to a higher value to continue trying with current parameters. Or, try
                           different parameters.")) }
