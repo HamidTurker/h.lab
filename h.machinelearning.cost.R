@@ -18,8 +18,7 @@ h.machinelearning.cost <- function(x, y, w, b, model = "linear", lambda_w = 0, l
       cost (float): The cost of using w,b as the parameters for linear regression
                     to fit the data points y using weighted transformations of x"
   
-
-
+  
   # Initialize cost
   cost_sum = 0
   reg_w_sum = 0
