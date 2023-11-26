@@ -31,7 +31,7 @@ source(paste0(hlab_dir,'h.machinelearning.gradient_descent.R'))
     # Run gradient descent
     grad_desc = h.machinelearning.gradient_descent(x=training_set$size, y=training_set$price,
                                                    w_init=0, b_init=0, 
-                                                   alpha=1.0e-2, num_iters=1e4, 
+                                                   alpha=1.0e-2, n_iters=1e4, 
                                                    verbose=T, search=F, plot=T)
     
   }
@@ -79,20 +79,19 @@ In 'Matlab, vector(1)'. But, in Python, it'd be 'vector[0]' to get the number 77
     target_set=training_set[,"price"]
     
     # Initialize parameters
-    #b_init = 785.1811367994083
-    #w_init = c(0.39133535, 18.75376741, -53.36032453, -26.42131618) # One for each feature, in order of columns in the features set
-    b_init = 0
-    w_init = c(0,0,0,0)
+    b_init = 785.1811367994083
+    w_inits = c(0.39133535, 18.75376741, -53.36032453, -26.42131618) # One for each feature, in order of columns in the features set
+    #w_inits = runif(length(features_set))
+    b_init = .1
+    w_inits = c(.1,.1,.1,.1)
     
     # Run gradient descent
     grad_desc = h.machinelearning.gradient_descent(x=features_set, y=target_set,
-                                                   w_init=w_init, b_init=b_init, 
-                                                   alpha=5e-7, num_iters=1000, 
+                                                   w_init=w_inits, b_init=b_init, 
+                                                   alpha=5e-7, n_iters=1000,
                                                    verbose=TRUE, search=FALSE, plot=TRUE, scale=FALSE,
                                                    max_iters=1e+10, conv_crit=1e-50, div_crit=1e+100,
                                                    searchspace=3, cost.method = NULL, gradient.method = NULL)
-    
-    
     
   }
   
@@ -131,7 +130,7 @@ Let's try fitting a non-linear curve. We'll start with a simple quadratic:  y = 
     # Run gradient descent
     grad_desc = h.machinelearning.gradient_descent(x=training_set$x, y=training_set$y,
                                                    w_init=w_initial, b_init=b_initial, 
-                                                   alpha=alpha, num_iters=n_iters, 
+                                                   alpha=alpha, n_iters=n_iters, 
                                                    verbose=T, search=F, plot=F)
     # Look at the results! Our best fitting w and b combo is:
     "Gradient descent found w (19) and b (-56), with a cost (J_wb) of 438.9."
@@ -151,7 +150,7 @@ Let's try fitting a non-linear curve. We'll start with a simple quadratic:  y = 
     alpha = 1e-5
     grad_desc = h.machinelearning.gradient_descent(x=training_set$x_sq, y=training_set$y,
                                                    w_init=w_initial, b_init=b_initial,
-                                                   alpha=alpha, num_iters=n_iters, 
+                                                   alpha=alpha, n_iters=n_iters, 
                                                    verbose=T, search=F, plot=F)
     # This should have done a much better job.
     w_fit = grad_desc[[1]] # w (Should be ~1.004)
@@ -194,7 +193,7 @@ Let's try fitting a non-linear curve. We'll start with a simple quadratic:  y = 
     
     grad_desc = h.machinelearning.gradient_descent(x=features_set, y=target_set,
                                                    w_init=w_initial, b_init=b_initial,
-                                                   alpha=alpha, num_iters=n_iters, 
+                                                   alpha=alpha, n_iters=n_iters, 
                                                    verbose=T, search=F, plot=F)
     "Gradient descent found the following values:
       w_1:  0.0823753
@@ -218,7 +217,7 @@ Let's try fitting a non-linear curve. We'll start with a simple quadratic:  y = 
     # Since our three features vary in range, let's see what happens when we scale them (by adding scale=TRUE).
     grad_desc = h.machinelearning.gradient_descent(x=features_set, y=target_set,
                                                    w_init=w_initial, b_init=b_initial,
-                                                   alpha=alpha, num_iters=n_iters, 
+                                                   alpha=alpha, n_iters=n_iters, 
                                                    verbose=T, search=F, plot=F,
                                                    scale=T)
     "Gradient descent found the following values:
@@ -236,7 +235,7 @@ Let's try fitting a non-linear curve. We'll start with a simple quadratic:  y = 
     #alpha=.6; n_iters=1e3
     grad_desc = h.machinelearning.gradient_descent(x=features_set, y=target_set,
                                                    w_init=w_initial, b_init=b_initial,
-                                                   alpha=alpha, num_iters=n_iters, 
+                                                   alpha=alpha, n_iters=n_iters, 
                                                    verbose=T, search=F, plot=F,
                                                    scale=T)
     "Gradient descent found the following values:
@@ -299,7 +298,7 @@ Let's try fitting a non-linear curve. We'll start with a simple quadratic:  y = 
     # This will take a long time in R. Very long!
     grad_desc = h.machinelearning.gradient_descent(x=features_set, y=target_set,
                                                    w_init=w_initial, b_init=b_initial,
-                                                   alpha=alpha, num_iters=n_iters, 
+                                                   alpha=alpha, n_iters=n_iters, 
                                                    verbose=T, search=F, plot=F,
                                                    scale=T)
     "Gradient descent found the following values:
@@ -341,143 +340,423 @@ Let's try fitting a non-linear curve. We'll start with a simple quadratic:  y = 
 ##################
 {
   "Classification"
-  # In addition to predicting values using a model, another common machine learning problem is that of
-  # classifying data points into categories. For classification problems, our linear regression approach
-  # is - sadly - not very suited. Instead, we'll need something called logistic regression.
-  
-  # Let's see how they both perform by setting up some data (x, y) that has groupings (g) and a color map (c)
-  training_set1a <- data.frame(
-    x = c(0, 1, 2, 3, 4, 5),
-    g = c(0, 0, 0, 1, 1, 1),
-    c = c("blue","blue","blue","red","red","red")
-  )
-  plot(training_set1a$x, training_set1a$g, col=training_set1a$c, pch=16) # One variable (x)
-  
-  # Run gradient descent
-  grad_desc = h.machinelearning.gradient_descent(x=training_set1a$x, y=training_set1a$g,
-                                                 w_init=0, b_init=0, 
-                                                 alpha=.1, num_iters=1e6, 
-                                                 verbose=T, search=T, plot=T)
-  "Gradient descent found w (0.257143) and b (-0.142857), with a cost (J_wb) of 0.0285714."
-  lines(training_set1a$x, 0.257143*training_set1a$x + -0.142857, lwd=4) # Fitted linear regression line
-  # Note, lines() takes an x and y argument, so we first pass it the independent x values and then the model
-  
-  # We can then draw a threshold, say at g = .5
-  abline(h=.5) # abline will now draw a horizontal line at .5 (hence, h=.5)
-  # Next, for example, we decide to classify points that lie to one side of the intersection
-  # between our threshold and our regression line will be classified as one group and points
-  # on the other side as part of the other group.
-  f1 <- function(x) 0.257143*x + -0.142857 # Our fitted model
-  f2 <- function() .5                      # Our arbitrary threshold
-  
-  uniroot(function(x) f1(x)-f2(),c(0,5))$root # This asks for the intersection (root) between
-  # two functions in the interval 0 to 5. And indeed, it finds x is 2.499998 -- that looks right.
-  abline(v=uniroot(function(x) f1(x)-f2(),c(0,5))$root) # abline will now draw a vertical line at ~2.5
-  # In this case, all data are classified correctly (blue on the left side of ~2.5, red on the right side).
-  
-  # But now let's add another data point
-  training_set1b <- data.frame(
-    x = c(0, 1, 2, 3, 4, 5, 10),
-    g = c(0, 0, 0, 1, 1, 1, 1),
-    c = c("blue","blue","blue","red","red","red","red")
-  )
-  plot(training_set1b$x, training_set1b$g, col=training_set1b$c, pch=16) # One variable (x)
-  
-  # Run gradient descent
-  grad_desc = h.machinelearning.gradient_descent(x=training_set1b$x, y=training_set1b$g,
-                                                 w_init=0, b_init=0, 
-                                                 alpha=.01, num_iters=1e6, 
-                                                 verbose=T, search=F, plot=F)
-  "Gradient descent found w (0.117391) and b (0.152174), with a cost (J_wb) of 0.057764."
-  
-  # Plot the model
-  lines(training_set1b$x, 0.117391*training_set1b$x + -0.152174, lwd=4) # Fitted linear regression line
-  abline(h=.5) # Threshold
-  f1 <- function(x) 0.117391*x + -0.152174 # Our fitted model
-  f2 <- function() .5                      # Our arbitrary threshold
-  abline(v=uniroot(function(x) f1(x)-f2(),c(0,10))$root) # abline will now draw a vertical line at ~5.56
-  
-  # Okay, that looks bad! We're now misclassifying the original 3 red data points and only capturing the
-  # new data point that we just introduced. Clearly, we need a better approach than linear regression.
-  
+  {
+    # In addition to predicting values using a model, another common machine learning problem is that of
+    # classifying data points into categories. For classification problems, our linear regression approach
+    # is - sadly - not very suited. Instead, we'll need something called logistic regression.
+    
+    # Let's see how they both perform by setting up some data (x, y) that has groupings (g) and a color map (c)
+    training_set1a <- data.frame(
+      x = c(0, 1, 2, 3, 4, 5),
+      g = c(0, 0, 0, 1, 1, 1),
+      c = c("blue","blue","blue","red","red","red")
+    )
+    plot(training_set1a$x, training_set1a$g, col=training_set1a$c, pch=16) # One variable (x)
+    
+    # Run gradient descent
+    grad_desc = h.machinelearning.gradient_descent(x=training_set1a$x, y=training_set1a$g,
+                                                   w_init=0, b_init=0, 
+                                                   alpha=.1, n_iters=1e6, 
+                                                   verbose=T, search=F, plot=F)
+    "Gradient descent found w (0.257143) and b (-0.142857), with a cost (J_wb) of 0.0285714."
+    lines(training_set1a$x, 0.257143*training_set1a$x + -0.142857, lwd=4) # Fitted linear regression line
+    # Note, lines() takes an x and y argument, so we first pass it the independent x values and then the model
+    
+    # We can then draw a threshold, say at g = .5
+    abline(h=.5) # abline will now draw a horizontal line at .5 (hence, h=.5)
+    # Next, for example, we decide to classify points that lie to one side of the intersection
+    # between our threshold and our regression line will be classified as one group and points
+    # on the other side as part of the other group.
+    f1 <- function(x) 0.257143*x + -0.142857 # Our fitted model
+    f2 <- function() .5                      # Our arbitrary threshold
+    
+    uniroot(function(x) f1(x)-f2(),c(0,5))$root # This asks for the intersection (root) between
+    # two functions in the interval 0 to 5. And indeed, it finds x is 2.499998 -- that looks right.
+    abline(v=uniroot(function(x) f1(x)-f2(),c(0,5))$root) # abline will now draw a vertical line at ~2.5
+    # In this case, all data are classified correctly (blue on the left side of ~2.5, red on the right side).
+    
+    # But now let's add another data point
+    training_set1b <- data.frame(
+      x = c(0, 1, 2, 3, 4, 5, 10),
+      g = c(0, 0, 0, 1, 1, 1, 1),
+      c = c("blue","blue","blue","red","red","red","red")
+    )
+    plot(training_set1b$x, training_set1b$g, col=training_set1b$c, pch=16) # One variable (x)
+    
+    # Run gradient descent
+    grad_desc = h.machinelearning.gradient_descent(x=training_set1b$x, y=training_set1b$g,
+                                                   w_init=0, b_init=0, 
+                                                   alpha=.01, n_iters=1e6, 
+                                                   verbose=T, search=F, plot=F)
+    "Gradient descent found w (0.117391) and b (0.152174), with a cost (J_wb) of 0.057764."
+    
+    # Plot the model
+    lines(training_set1b$x, 0.117391*training_set1b$x + -0.152174, lwd=4) # Fitted linear regression line
+    abline(h=.5) # Threshold
+    f1 <- function(x) 0.117391*x + -0.152174 # Our fitted model
+    f2 <- function() .5                      # Our arbitrary threshold
+    abline(v=uniroot(function(x) f1(x)-f2(),c(0,10))$root) # abline will now draw a vertical line at ~5.56
+    
+    # Okay, that looks bad! We're now misclassifying the original 3 red data points and only capturing the
+    # new data point that we just introduced. Clearly, we need a better approach than linear regression.
+  }
+    
   "Logistic regression"
-  # Enter logistic regression, one of the (if actually the) most used classification algorithm in the world!
-  # Instead of a linear model 'y(x) = w*x + b', we will use a so-called sigmoid function (a.k.a. logistic
-  # function). The sigmoid function is 'g(z) = 1 / (1+e^-z)', where 0 < g(z) < 1 (so, y can only take on values
-  # between 0 and 1). Importantly, the z variable in the sigmoid function is actually y(x), the output of the
-  # linear regression function. Let's take a closer look, using training_set2.
+  {
+    # Enter logistic regression, one of the (if not actually the) most used classification algorithm in the world!
+    # Instead of a linear model 'y(x) = w*x + b', we will use a so-called sigmoid function (a.k.a. logistic
+    # function). The sigmoid function is 'g(z) = 1 / (1+e^-z)', where 0 < g(z) < 1 (so, y can only take on values
+    # between 0 and 1). Importantly, the z variable in the sigmoid function is actually y(x) from earlier, the 
+    # output of the linear regression function.
+    
+    # Logistic regression also uses a cost function that is different from linear regression:
+    #
+    # loss(f_wb_i, y_i) =  { -log(f_wb_i)      if y_i = 1 
+    #                        -log(1 - f_wb_i)  if y_i = 0 }
+    #
+    # The error at the level of each individual training sample is often referred to as 'loss', but it is
+    # essentially another word for 'error'. Thus, the average loss -- across all training examples -- is
+    # the cost of the model. It's referred to as loss, because we're "losing (some) information" by modeling.
+    # Importantly, as you can see, there are two elements to this function. It uses two 'loss curves', one
+    # for each category in the data (y_i = 1 or y_i = 0).
+    
+    # The loss function above can be rewritten as follows and that's how it's implemented in h.lab:
+    #
+    # loss(f_wb_i, y_i) = (-y_i * log(f_wb_i)) - (1 - y_i) * log(1 - f_wb_i)
+    #
+    # Note that y_i is the category value, so, for instance, it would only take on a value of either 1 or 0.
+    # If y_i is 1, you'll see that it indeed reduces to top loss function in the first example. When it's 0,
+    # it indeed reduces to the bottom one.
+    #
+    # You might also be wondering why the cost function looks the way it does. It is derived from a statistical
+    # concept called 'maximum likelihood'. No need to worry about what that is just yet. We'll return to it later.
+    # For now, let's see how it works.
+    
+    
+    # Let's see how logistic regression handles the following data
+    training_set2 <- data.frame(
+      x1 = c(.5, 1, 1.5, 3, 2, 1),
+      x2 = c(1.5, 1, .5, .5, 2, 2.5),
+      g = c(0, 0, 0, 1, 1, 1),
+      c = c("blue","blue","blue","red","red","red")
+    )
+    plot(training_set2$x1, training_set2$x2, col=training_set2$c, pch=16, xlim=c(0, 3), ylim=c(0, 3.5))  # Two variables (x1, x2)
+    
+    features_set=training_set2[,c("x1","x2")]
+    target_set=training_set2[,"g"]
+    
+    # Run logistic gradient descent
+    grad_desc = h.machinelearning.gradient_descent(x=features_set, y=target_set,
+                                                   w_init=c(0,0), b_init=0,
+                                                   alpha=.1, n_iters=1e4, 
+                                                   verbose=T, search=F, plot=F,
+                                                   model="logistic") # <- Note that we need to request a logistic model
+    "Gradient descent found the following values:
+      w_1:  5.28123
+      w_2:  5.07816
+      b:    -14.2224
+      J:    0.0171178"
+    
+    # Plot the decision boundary
+    x1_intercept = -(-14.2224) / 5.28123 # Decision boundary intercepts the x1 variable's axis at this point
+    x2_intercept = -(-14.2224) / 5.07816 # ..and the x2 variable's axis at this point.
+    # Thus, the rule is:  - b / w  for each w we have. Note that we are flipping the sign of b.
+    
+    # We can use xspline to draw the boundary. This draws a line between provided coordinates, but its approach
+    # may feel a bit odd at first. We first provide all the x-coordinates, then all the y-coordinates. In this case,
+    # xspline draws the line from the first provided x-coordinate (x1_intercept) to the first provided y-coordinate
+    # which is the SECOND 0 below. The line is then drawn to the coordinate based on the second provided x-coordinate,
+    # which is our FIRST 0 below and the second provided y-coordinate, which is x2_intercept.
+    xspline(c(x1_intercept,0),c(0,x2_intercept),lwd=4)
+    #segments(x0=0, y0=x2_intercept, x1=x1_intercept, y1=0,lwd=4) # These are different ways to draw the line
+    #lines(x=c(0,x1_intercept),y=c(x2_intercept,0),lwd=4)
+    
+    # Great! Now, when a data point falls on one side of the decision boundary, we categorize it as one category, and
+    # when it falls on the other side, we categorize it as the other.
+    # In other words, what we now need /mathematically/ (i.e. not just visually in our plot) is some way to take
+    # our data (and future data points) and convert them into the categories, by computing on which side of the
+    # decision boundary they fall. Let's start by looking at our model again:
+    5.28123*training_set2$x1 + 5.07816*training_set2$x2 + -14.2224
+    # When you run this line, you get the following output:
+    "-3.964545 -3.863010 -3.761475  4.160370  6.496380  3.754230"
+    # Recall we had 6 data points and something should immediately become clear: the first 3 data points are
+    # negative in sign, the last 3 are positive. Think of the decision boundary as a zero point, with some data
+    # falling "above" it and others "below" it. Or "right" versus "left" of the line. Or.. "positive" versus
+    # "negative" /relative to/ the line. Thus, for any given data point, we compute following, for example with
+    # the first data point in the data frame ( x1=.5, x2=1.5 ):
+    "5.28123*.5 + 5.07816*1.5 + -14.2224 = -3.964545"
+    # And since this is negative, it falls in the range of the blue group. Easy-peasy!
+    # And the previous line of code executed that computation for the entire data frame. If we want, we can then
+    # convert the numeric results into categories ourselves as follows:
+    classification_set <- data.frame(
+      true_labels = training_set2$g,   # Ground truth of our labels
+      relative_to_bound = 5.28123*training_set2$x1 + 5.07816*training_set2$x2 + -14.2224 # Data relative to decision boundary
+    )
+    classification_set$modeled_labels[classification_set$relative_to_bound < 0] = 0
+    classification_set$modeled_labels[classification_set$relative_to_bound > 0] = 1
+    # Naturally, we could now compare what percentage of our modeled_labels match the ground truth,
+    # but that would be pointless -- they will match 100%. In future steps, we will first set up
+    # a decision boundary with /some/ portion of our data (the 'training set') and then test that
+    # boundary on data for which we do know the true labels but which weren't used to train the model
+    # (the 'test set'). There's no point in testing a model on the same data it was trained on.
+    
+    # Also look at the following. We can plot the model with our found weights and bias.
+    plot(seq(.5,3,by=.5), (1 / (1 + exp(- (5.28123*training_set2$x1 + 5.07816*training_set2$x2 + -14.2224)))), col=training_set2$c, pch=16)
+    # As you can see, it has labeled the first three points as belonging to category 0 and the last three as belonging to category 1.
+    
+    
+    # We'll return to our data from the classification section, but now run a logistic model
+    training_set1a <- data.frame(
+      x = c(0, 1, 2, 3, 4, 5),
+      g = c(0, 0, 0, 1, 1, 1),
+      c = c("blue","blue","blue","red","red","red")
+    )
+    plot(training_set1a$x, training_set1a$g, col=training_set1a$c, pch=16) # One variable (x)
+    features_set=training_set1a[,c("x")]
+    target_set=training_set1a[,"g"]
+    # Run gradient descent
+    grad_desc = h.machinelearning.gradient_descent(x=features_set, y=target_set,
+                                                   w_init=0, b_init=0, 
+                                                   alpha=.0001, n_iters=1e6, 
+                                                   verbose=T, search=F, plot=F,
+                                                   model = "logistic")    
+    "Gradient descent (logistic) found w (2.18657) and b (-5.16871), with a cost (J_wb) of 0.113415."
+    
+    # Plot the fitted sigmoid
+    # Logistic model: 1 / (1 + exp(- (w*x + b) ))
+    fitted_sigmoid = 1 / (1 + exp(- (2.18657*training_set1a$x + -5.16871) ))
+    "0.005659692 0.048239281 0.310973935 0.800751839 0.972816095 0.996871724"
+    lines(training_set1a$x, fitted_sigmoid, pch = 18, col = "black", type = "b")
+    lines(training_set1a$x, 2.18657*training_set1a$x + -5.16871, lwd=4) # We can even use the found weights on a linear line  
+    abline(h=.5)   
+    
+    # And also the other data set
+    training_set1b <- data.frame(
+      x = c(0, 1, 2, 3, 4, 5, 10),
+      g = c(0, 0, 0, 1, 1, 1, 1),
+      c = c("blue","blue","blue","red","red","red","red")
+    )
+    plot(training_set1b$x, training_set1b$g, col=training_set1b$c, pch=16) # One variable (x)
+    features_set=training_set1b[,c("x")]
+    target_set=training_set1b[,"g"]
+    # Run gradient descent
+    grad_desc = h.machinelearning.gradient_descent(x=features_set, y=target_set,
+                                                   w_init=0, b_init=0, 
+                                                   alpha=.0001, n_iters=1e6, 
+                                                   verbose=T, search=F, plot=F,
+                                                   model = "logistic")
+    "Gradient descent (logistic) found w (2.05927) and b (-4.83612), with a cost (J_wb) of 0.104991."
+    
+    # Plot the fitted sigmoid
+    # Logistic model: 1 / (1 + exp(- (w*x + b) ))
+    fitted_sigmoid = 1 / (1 + exp(- (2.05927*training_set1b$x + -4.83612) ))
+    "0.007875281 0.058588054 0.327926106 0.792767724 0.967734524 0.995765430 0.999999856"
+    lines(training_set1b$x, fitted_sigmoid, pch = 18, col = "black", type = "b")
+    lines(training_set1b$x, 2.05927*training_set1b$x + -4.83612, lwd=4) # We can even use the found weights on a linear line  
+    abline(h=.5)
+    
+    # Thus, each sample in the data set has a corresponding sigmoid value. For instance, the third blue sample
+    # has a value of 0.327926106 for the fitted sigmoid. The classification is now based on the values
+    # for the fitted sigmoid: any below 0.5 belong to one group, any above 0.5 to the other group. And indeed,
+    # the logistic regression has circumvented the issues we ran into with the linear regression. Now, all
+    # the samples are accurately classified.
+    
+    
+    ### Non-linear decision boundaries
+    # At this point, you might be wondering "But what if my data aren't neatly clustered like this?
+    # What if it's immediately obvious (from just visualizing my data) that a straight line is clearly
+    # not gonna work?" Well, then I've got good news for you! Take a look at this:
+    training_set3 <- data.frame(
+      x1 = c(.2, 1, 1.5, .2, 1, 1.5, -.2, -1, -1.5, -.2, -1, -1.5,
+             .2, .5, .6, .7, .4, .3, -.2, -.4, -.5, -.6, -.7, -.6),
+      x2 = c(1.8, 1.5, .8, -1.6, -1.5, -1.8, -1.8, -1.5, -1.1, 1.8, 1.5, 1.8,
+             .3, .4, .1, -.2, -.4, -.3, .3, .5, .7, -.3, -.4, -.6),
+      g = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+      c = c("red","red","red","red","red","red","red","red","red","red","red","red",
+            "blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue")
+    )
+    plot(training_set3$x1, training_set3$x2, col=training_set3$c, pch=16, xlim=c(-2, 2), ylim=c(-2, 2)) # Two variables (x1, x2)
+    # Okay, it looks like this isn't easily 'solvable' with a simple decision boundary (i.e., a single straight line)
+    # Recall that, earlier, we used feature engineering to add some polynomial features and then let the algorithm find
+    # weights that select the features for us. Let's try that here.
+    training_set3$x1_2 = training_set3$x1^2 # Squares
+    training_set3$x2_2 = training_set3$x2^2
+    training_set3$x1_3 = training_set3$x1^3 # Cubes
+    training_set3$x2_3 = training_set3$x2^3
+    
+    features_set=training_set3[,c("x1","x2","x1_2","x1_3","x2_2","x2_3")]
+    target_set=training_set3[,"g"]
+    
+    grad_desc = h.machinelearning.gradient_descent(x=features_set, y=target_set,
+                                                   w_init=c(0,0,0,0,0,0), b_init=0,
+                                                   alpha=.1, n_iters=1e4, 
+                                                   verbose=T, search=F, plot=F,
+                                                   model="logistic")
+    "Gradient descent (logistic) found the following values:
+      w_1:  -0.627192
+      w_2:  0.0364092
+      w_3:  -3.44463
+      w_4:  -0.174596
+      w_5:  -4.87699
+      w_6:  0.160551
+      b:    7.29609
+      J:    0.00316245"
+    # From the looks of it, w_3 and w_5 appear to be useful features (the others are, relatively speaking, much closer to 0). These two
+    # weights correspond to our two squared terms: x1^2 and x2^2.
+    #     features_set=training_set3[,c("x1","x2","x1_2","x1_3","x2_2","x2_3")] <- weights 3 and 5 are the squared terms
+    
+    # So now let's replot the data, but now using the squared terms instead.
+    plot(training_set3$x1^2, training_set3$x2^2, col=training_set3$c, pch=16)
+    x1_intercept = -(7.29609) / -3.44463; x2_intercept = -(7.29609) / -4.87699
+    xspline(c(x1_intercept,0),c(0,x2_intercept),lwd=4)
+    
+    # As you can see, a little bit of feature engineering can sometimes reduce a complex problem to a simpler problem.
+  }
+  
+  "Overfitting"
+  # You may now be tempted to think "Gee, why not always engineer a ton of features and then fit my data -- easy!"
+  # Well, with more and more (higher-order, polynomial) features, the algorithm will contort itself to find a highly
+  # complicated decision boundary. At that point, you are 'overfitting' the data. This is often also called 'high variance'
+  # in a model (because predictions on new data can highly vary). The reverse is also possible: 'underfitting' (a.k.a. bias).
+  # When our model doesn't have an appropriate fit, it will not generalize to new data (it will be biased towards certain data).
+  
+  # How can we diagnose a wrong fit and what can we do to mitigate it? First, more data -- more data will always help. However,
+  # this may not always be possible. Second, reducing the number of features (i.e., feature selection). However, it is possible,
+  # in theory and even in practice, that all feature are informative to a substantial extent. At that point, reducing features
+  # would mean throwing away valuable information. Third, we can use regularization. Regularization minimizes the extent to which
+  # a given feature can impact the overall model fitting process. We're gonna look at this last option next.
+  
+  ### Regularization
+  # Regularization is performed on the features (i.e., w_1, w_2, w_3, ... w_n). It's possible to regularize the b parameter too,
+  # although that should have little impact in practice. And so, by convention, only the coefficient weights are regularized.
+  # Note that regularization is meant to reduce overfitting (as opposed to underfitting).
+  
+  # An example of over/underfitting with linear regression
+  training_set4 <- data.frame(
+    x = 0:25
+  )
+  for (i in 1:length(training_set4$x)) { training_set4$y[i] = (training_set4$x[i]+runif(1)*3)^2 }
+  # True model is quadratic with some noise
+  plot(training_set4$x, training_set4$y, pch=16, xlim=c(0, length(training_set4$x)), ylim=c(0, 1100))
+  
+  # Set up squared terms, cubed terms, and so on up until a 6th degree polynomial
+  training_set4$x_2 = training_set4$x^2 # Squares
+  training_set4$x_3 = training_set4$x^3 # Cubes
+  training_set4$x_4 = training_set4$x^4
+  training_set4$x_5 = training_set4$x^5
+  training_set4$x_6 = training_set4$x^6
+  
+  # Select however many of the features you wanna use
+  features_set=training_set4[,c("x","x_2","x_3","x_4","x_5","x_6")]
+  features_set=training_set4[,c("x","x_2","x_3")]
+  features_set=training_set4[,c("x","x_2")]
+  w_inits=0 # If 1 feature
+  w_inits=runif(length(features_set)) # If >1 features
+  
+  # Fit
+  grad_desc = h.machinelearning.gradient_descent(x=features_set, y=training_set4[,"y"],
+                                                 w_init=w_inits, b_init=0, 
+                                                 alpha=1e-100, n_iters=1e4, 
+                                                 div_crit = 1e+2000, scale=F,
+                                                 verbose=T, search=F, plot=F,
+                                                 model = "linear",
+                                                 cost.lambda_w = 0)
+  
+  lines(training_set4$x, 1.25765*training_set4$x_2 + 0.0956655, lwd=4)
+  lines(training_set4$x, 3.65684*training_set4$x + 3.37048*training_set4$x_2 + 3.66208, lwd=4)
+  lines(training_set4$x, 0.515225*training_set4$x + 0.285974*training_set4$x_2 + 0.0360659*training_set4$x_3 + 2.49354e-05, lwd=4)
+  lines(training_set4$x, 0.898841*training_set4$x + 0.0671861*training_set4$x_2 + 0.671709*training_set4$x_3 + 0.658829*training_set4$x_4 + 0.920746*training_set4$x_5 + 0.615722*training_set4$x_6 + -2.53318e-89, lwd=4)
   
   
+  # Now an example of over/underfitting with logistic regression
+  training_set5 <- data.frame(
+    x = c(c(-.75,-72,-.5,-.39,-.4,-.39,-.28,-.27,-.25,-.14,.6,.8,-.10,-.8,-.7,-.2,-.29,-.25,.45,.55,.23,.21,.08,.1,.12,.05,.17,.12,.22,.4),c(-.66,-.63,-.68,-.59,-.53,-.42,-.30,-.12,-.27,-.07,-.01,-.13,-.10,-.33,-.28,.25,.29,.49,.59,.67,.61,.99)),
+    y = c(c(.2,.04,-.16,-.30,-.78,-.87,-.22,-.46,-.91,-.97,0,-.1,-.95,-.59,-.33,-.81,-.15,-.36,-.87,-.83,-.94,-.83,-.46,-.66,-.31,-.01,-.004,-.002,-.11,-.11),c(.76,.56,.40,.24,-.74,.03,.10,.54,.70,.90,-.23,-.15,.90,-.23,-.04,.06,.32,.31,.16,.47,.21,.93)),
+    g = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+    c = c("blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue","blue",
+          "red","red","red","red","red","red","red","red","red","red","red","red","red","red","red","red","red","red","red","red","red","red")
+  )
+  plot(training_set5$x, training_set5$y, col=training_set5$c, pch=16, xlim=c(-1, 1), ylim=c(-1, 1))
   
-  
+  # We'll try fitting a decision boundary using some nth degree polynomial and logistic regression
+  features_set = training_set5$x
+  grad_desc = h.machinelearning.gradient_descent(x=features_set, y=training_set5[,"g"],
+                                                 w_init=0, b_init=0, 
+                                                 alpha=1e-5, n_iters=1e5, 
+                                                 div_crit = 1e+2000, scale=F,
+                                                 verbose=T, search=F, plot=F,
+                                                 model = "logistic",
+                                                 cost.lambda_w = 0)
+  "Gradient descent (logistic) found w (0.0632092) and b (-0.0598015), with a cost (J_wb) of 0.676335."
+  plot(training_set5$x, 0.0632092*training_set5$x, col=training_set5$c, pch=16) # Does a decent job of separating data
+  lines(training_set5$x, (0.0632092*training_set5$x + -0.0598015), pch = 18, col = "black", type = "b")
 
+  training_set5$class = 0.0632092*training_set5$x;
+  training_set5$class_col[training_set5$class < 0] = "blue"; training_set5$class_col[training_set5$class > 0] = "red";
+  training_set5$class_g[training_set5$class < 0] = 0; training_set5$class_g[training_set5$class > 0] = 1;
+  plot(training_set5$x, training_set5$y, col=training_set5$class_col, pch=16, xlim=c(-1, 1), ylim=c(-1, 1))
   
+  
+  #fitted_curve = 1 / (1 + exp(- (0.0632092*training_set5$x + -0.0598015) ))
+  #lines(training_set5$x, fitted_curve, pch = 18, col = "green", type = "b")
   
 }
 
 
+###################
+###### TESTS ######
+###################
+{
+  # h.lab
+  hlab_dir='~/Desktop/Research/+h.lab/'
+  source(paste0(hlab_dir,'h.format.expand_grid.R'))
+  source(paste0(hlab_dir,'h.machinelearning.cost.R'))
+  source(paste0(hlab_dir,'h.machinelearning.gradient.R'))
+  source(paste0(hlab_dir,'h.machinelearning.gradient_descent.R'))
+  
+  x = data.frame(
+    a = c(1,2,3),
+    a2 = c(4,5,6),
+    b = c(7,8,9),
+    b2 = c(10,11,12),
+    c = c(13,14,15),
+    c2 = c(16,17,18)
+  )
+  y=c(0,1,0,1,0)
+  w=c(-.40165317,-0.07889237,.45788953,.03316528,.19187711,-.18448437)
+  b=.5
+  cost.lambda_w=.7
+  cost.lambda_b=0
+  model = "linear"
+  
+  
+  # Test the cost and gradient scripts. Do you get the expected output?
+  
+  h.machinelearning.cost(x, y, w, b, model="linear", lambda_w=cost.lambda_w, lambda_b=cost.lambda_b)
+  "3.406914"
+  
+  h.machinelearning.cost(x, y, w, b, model="logistic", lambda_w=cost.lambda_w, lambda_b=cost.lambda_b)
+  "2.027153"
+  
+  h.machinelearning.gradient(x, y, w, b, method = NULL, model = "linear")
+  " [[1]]
+         [,1]     [,2]     [,3]     [,4]     [,5]     [,6]
+    [1,] 5.105691 12.74632 20.38696 28.02759 35.66823 43.30886
 
+    [[2]]
+    [1] 2.546878
+  "
+  h.machinelearning.gradient(x, y, w, b, method = NULL, model = "logistic")
+  " [[1]]
+         [,1]     [,2]     [,3]     [,4]   [,5]     [,6]
+    [1,] 1.227643 3.068207 4.908771 6.749336 8.5899 10.43046
 
-
-
-
-training_set2 <- data.frame(
-  x1 = c(.5, 1, 1, 1.5, 2, 3),
-  x2 = c(1.5, 1, 2.5, .5, 2, .5),
-  g = c(0, 0, 1, 0, 1, 1),
-  c = c("red","red","blue","red","blue","blue")
-)
-plot(training_set2$x1, training_set2$x2, col=training_set2$c, pch=16)  # Two variables (x1, x2)
-
-features_set=training_set2[,c("x1","x2")]
-target_set=training_set2[,"g"]
-
-x=features_set; y=target_set;
-w_init=c(1,1); b_init=-3; 
-alpha=.1; num_iters=1e6; 
-verbose=T; search=F; plot=F
-
-desc_hist = array(NA, c(num_iters,3)); colnames(desc_hist) = c("J","w","b")
-n_examples = length(x)
-b = b_init
-w = w_init
-i = 1
-
-
-
-
-
-
-
-# What about with 2 variables? Things get even more complicated.
-training_set2 <- data.frame(
-  x1 = c(.5, 1, 1, 1.5, 2, 3),
-  x2 = c(1.5, 1, 2.5, .5, 2, .5),
-  g = c(0, 0, 1, 0, 1, 1),
-  c = c("red","red","blue","red","blue","blue")
-)
-plot(training_set2$x1, training_set2$x2, col=training_set2$c, pch=16)  # Two variables (x1, x2)
-
-# Run gradient descent
-grad_desc = h.machinelearning.gradient_descent(x=training_set2$x1, y=training_set2$x2,
-                                               w_init=0, b_init=0, 
-                                               alpha=.1, num_iters=1e6, 
-                                               verbose=T, search=F, plot=F)
-"Gradient descent found w (-0.375) and b (1.89583), with a cost (J_wb) of 0.230903."
-plot(training_set2$x1, training_set2$x2, col=training_set2$c, pch=16) # Two variables (x1, x2)
-lines(training_set2$x1, -0.375*training_set2$x1 + 1.89583, lwd=4) # Fitted linear regression line
-
-
-
-
-
-
-
-
-
-
-
-
+    [[2]]
+    [1] 0.6135214
+  "
+  
+}
 
 ###################
 ##### FIGURES #####
@@ -520,235 +799,26 @@ lines(training_set2$x1, -0.375*training_set2$x1 + 1.89583, lwd=4) # Fitted linea
 
 
 
+#######
+## Normal equation to get regression coefficients
+#######
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-if (TRUE) {
-x=list(c(1.24e+03, 3.00e+00, 1.00e+00, 6.40e+01),
-      c(1.95e+03, 3.00e+00, 2.00e+00, 1.70e+01),
-      c(1.72e+03, 3.00e+00, 2.00e+00, 4.20e+01),
-      c(1.96e+03, 3.00e+00, 2.00e+00, 1.50e+01),
-      c(1.31e+03, 2.00e+00, 1.00e+00, 1.40e+01),
-      c(8.64e+02, 2.00e+00, 1.00e+00, 6.60e+01),
-      c(1.84e+03, 3.00e+00, 1.00e+00, 1.70e+01),
-      c(1.03e+03, 3.00e+00, 1.00e+00, 4.30e+01),
-      c(3.19e+03, 4.00e+00, 2.00e+00, 8.70e+01),
-      c(7.88e+02, 2.00e+00, 1.00e+00, 8.00e+01),
-      c(1.20e+03, 2.00e+00, 2.00e+00, 1.70e+01),
-      c(1.56e+03, 2.00e+00, 1.00e+00, 1.80e+01),
-      c(1.43e+03, 3.00e+00, 1.00e+00, 2.00e+01),
-      c(1.22e+03, 2.00e+00, 1.00e+00, 1.50e+01),
-      c(1.09e+03, 2.00e+00, 1.00e+00, 6.40e+01),
-      c(8.48e+02, 1.00e+00, 1.00e+00, 1.70e+01),
-      c(1.68e+03, 3.00e+00, 2.00e+00, 2.30e+01),
-      c(1.77e+03, 3.00e+00, 2.00e+00, 1.80e+01),
-      c(1.04e+03, 3.00e+00, 1.00e+00, 4.40e+01),
-      c(1.65e+03, 2.00e+00, 1.00e+00, 2.10e+01),
-      c(1.09e+03, 2.00e+00, 1.00e+00, 3.50e+01),
-      c(1.32e+03, 3.00e+00, 1.00e+00, 1.40e+01),
-      c(1.59e+03, 0.00e+00, 1.00e+00, 2.00e+01),
-      c(9.72e+02, 2.00e+00, 1.00e+00, 7.30e+01),
-      c(1.10e+03, 3.00e+00, 1.00e+00, 3.70e+01),
-      c(1.00e+03, 2.00e+00, 1.00e+00, 5.10e+01),
-      c(9.04e+02, 3.00e+00, 1.00e+00, 5.50e+01),
-      c(1.69e+03, 3.00e+00, 1.00e+00, 1.30e+01),
-      c(1.07e+03, 2.00e+00, 1.00e+00, 1.00e+02),
-      c(1.42e+03, 3.00e+00, 2.00e+00, 1.90e+01),
-      c(1.16e+03, 3.00e+00, 1.00e+00, 5.20e+01),
-      c(1.94e+03, 3.00e+00, 2.00e+00, 1.20e+01),
-      c(1.22e+03, 2.00e+00, 2.00e+00, 7.40e+01),
-      c(2.48e+03, 4.00e+00, 2.00e+00, 1.60e+01),
-      c(1.20e+03, 2.00e+00, 1.00e+00, 1.80e+01),
-      c(1.84e+03, 3.00e+00, 2.00e+00, 2.00e+01),
-      c(1.85e+03, 3.00e+00, 2.00e+00, 5.70e+01),
-      c(1.66e+03, 3.00e+00, 2.00e+00, 1.90e+01),
-      c(1.10e+03, 2.00e+00, 2.00e+00, 9.70e+01),
-      c(1.78e+03, 3.00e+00, 2.00e+00, 2.80e+01),
-      c(2.03e+03, 4.00e+00, 2.00e+00, 4.50e+01),
-      c(1.78e+03, 4.00e+00, 2.00e+00, 1.07e+02),
-      c(1.07e+03, 2.00e+00, 1.00e+00, 1.00e+02),
-      c(1.55e+03, 3.00e+00, 1.00e+00, 1.60e+01),
-      c(1.95e+03, 3.00e+00, 2.00e+00, 1.60e+01),
-      c(1.22e+03, 2.00e+00, 2.00e+00, 1.20e+01),
-      c(1.62e+03, 3.00e+00, 1.00e+00, 1.60e+01),
-      c(8.16e+02, 2.00e+00, 1.00e+00, 5.80e+01),
-      c(1.35e+03, 3.00e+00, 1.00e+00, 2.10e+01),
-      c(1.57e+03, 3.00e+00, 1.00e+00, 1.40e+01),
-      c(1.49e+03, 3.00e+00, 1.00e+00, 5.70e+01),
-      c(1.51e+03, 2.00e+00, 1.00e+00, 1.60e+01),
-      c(1.10e+03, 3.00e+00, 1.00e+00, 2.70e+01),
-      c(1.76e+03, 3.00e+00, 2.00e+00, 2.40e+01),
-      c(1.21e+03, 2.00e+00, 1.00e+00, 1.40e+01),
-      c(1.47e+03, 3.00e+00, 2.00e+00, 2.40e+01),
-      c(1.77e+03, 3.00e+00, 2.00e+00, 8.40e+01),
-      c(1.65e+03, 3.00e+00, 1.00e+00, 1.90e+01),
-      c(1.03e+03, 3.00e+00, 1.00e+00, 6.00e+01),
-      c(1.12e+03, 2.00e+00, 2.00e+00, 1.60e+01),
-      c(1.15e+03, 3.00e+00, 1.00e+00, 6.20e+01),
-      c(8.16e+02, 2.00e+00, 1.00e+00, 3.90e+01),
-      c(1.04e+03, 3.00e+00, 1.00e+00, 2.50e+01),
-      c(1.39e+03, 3.00e+00, 1.00e+00, 6.40e+01),
-      c(1.60e+03, 3.00e+00, 2.00e+00, 2.90e+01),
-      c(1.22e+03, 3.00e+00, 1.00e+00, 6.30e+01),
-      c(1.07e+03, 2.00e+00, 1.00e+00, 1.00e+02),
-      c(2.60e+03, 4.00e+00, 2.00e+00, 2.20e+01),
-      c(1.43e+03, 3.00e+00, 1.00e+00, 5.90e+01),
-      c(2.09e+03, 3.00e+00, 2.00e+00, 2.60e+01),
-      c(1.79e+03, 4.00e+00, 2.00e+00, 4.90e+01),
-      c(1.48e+03, 3.00e+00, 2.00e+00, 1.60e+01),
-      c(1.04e+03, 3.00e+00, 1.00e+00, 2.50e+01),
-      c(1.43e+03, 3.00e+00, 1.00e+00, 2.20e+01),
-      c(1.16e+03, 3.00e+00, 1.00e+00, 5.30e+01),
-      c(1.55e+03, 3.00e+00, 2.00e+00, 1.20e+01),
-      c(1.98e+03, 3.00e+00, 2.00e+00, 2.20e+01),
-      c(1.06e+03, 3.00e+00, 1.00e+00, 5.30e+01),
-      c(1.18e+03, 2.00e+00, 1.00e+00, 9.90e+01),
-      c(1.36e+03, 2.00e+00, 1.00e+00, 1.70e+01),
-      c(9.60e+02, 3.00e+00, 1.00e+00, 5.10e+01),
-      c(1.46e+03, 3.00e+00, 2.00e+00, 1.60e+01),
-      c(1.45e+03, 3.00e+00, 2.00e+00, 2.50e+01),
-      c(1.21e+03, 2.00e+00, 1.00e+00, 1.50e+01),
-      c(1.55e+03, 3.00e+00, 2.00e+00, 1.60e+01),
-      c(8.82e+02, 3.00e+00, 1.00e+00, 4.90e+01),
-      c(2.03e+03, 4.00e+00, 2.00e+00, 4.50e+01),
-      c(1.04e+03, 3.00e+00, 1.00e+00, 6.20e+01),
-      c(1.62e+03, 3.00e+00, 1.00e+00, 1.60e+01),
-      c(8.03e+02, 2.00e+00, 1.00e+00, 8.00e+01),
-      c(1.43e+03, 3.00e+00, 2.00e+00, 2.10e+01),
-      c(1.66e+03, 3.00e+00, 1.00e+00, 6.10e+01),
-      c(1.54e+03, 3.00e+00, 1.00e+00, 1.60e+01),
-      c(9.48e+02, 3.00e+00, 1.00e+00, 5.30e+01),
-      c(1.22e+03, 2.00e+00, 2.00e+00, 1.20e+01),
-      c(1.43e+03, 2.00e+00, 1.00e+00, 4.30e+01),
-      c(1.66e+03, 3.00e+00, 2.00e+00, 1.90e+01),
-      c(1.21e+03, 3.00e+00, 1.00e+00, 2.00e+01),
-      c(1.05e+03, 2.00e+00, 1.00e+00, 6.50e+01))
-y=c(300.  , 509.8 , 394.  , 540.  , 415.  , 230.  , 560.  , 294.  ,
-    718.2 , 200.  , 302.  , 468.  , 374.2 , 388.  , 282.  , 311.8 ,
-    401.  , 449.8 , 301.  , 502.  , 340.  , 400.28, 572.  , 264.  ,
-    304.  , 298.  , 219.8 , 490.7 , 216.96, 368.2 , 280.  , 526.87,
-    237.  , 562.43, 369.8 , 460.  , 374.  , 390.  , 158.  , 426.  ,
-    390.  , 277.77, 216.96, 425.8 , 504.  , 329.  , 464.  , 220.  ,
-    358.  , 478.  , 334.  , 426.98, 290.  , 463.  , 390.8 , 354.  ,
-    350.  , 460.  , 237.  , 288.3 , 282.  , 249.  , 304.  , 332.  ,
-    351.8 , 310.  , 216.96, 666.34, 330.  , 480.  , 330.3 , 348.  ,
-    304.  , 384.  , 316.  , 430.4 , 450.  , 284.  , 275.  , 414.  ,
-    258.  , 378.  , 350.  , 412.  , 373.  , 225.  , 390.  , 267.4 ,
-    464.  , 174.  , 340.  , 430.  , 440.  , 216.  , 329.  , 388.  ,
-    390.  , 356.  , 257.8 )
-} # Load large housing price data set
-
-size=NULL; rooms=NULL; floors=NULL; age=NULL
-for (i in 1:length(x)) {
-  size = append(size, x[[i]][1])
-  rooms = append(rooms, x[[i]][2])
-  floors = append(floors, x[[i]][3])
-  age = append(age, x[[i]][4])
+if (method == "normal") {
+  
+  # Print to console
+  message("Computation with the normal equation hasn't been validated yet! Use at your own peril!")
+  message("The normal equation is computationally expensive with a large number of features!") 
+  
+  # Check args
+  if (is.null(dim(x))) { n_examples = length(x); if (!n_examples > 1) { stop("The number of examples must exceed the number of features.") } }
+  if (!is.null(dim(x))) { n_examples = dim(x)[1]; n_features = dim(x)[2]; if (!n_examples > n_features) { stop("The number of examples must exceed the number of features.") } }
+  
+  # Normal equation
+  # Note the leading 1s in X, which are for the intercept
+  X = as.matrix(cbind(1,features_set)); Y = as.matrix(target_set);
+  beta = solve(t(X) %*% X) %*% (t(X) %*% Y)
+  return(beta)
+  
 }
-
-training_set <- data.frame(
-  size = size,
-  rooms = rooms,
-  floors = floors,
-  age = age,
-  price = y
-)
-
-plot(training_set$size,training_set$price)
-plot(training_set$rooms,training_set$price)
-plot(training_set$floors,training_set$price)
-plot(training_set$age,training_set$price)
-
-features_set=training_set[,c("size","rooms","floors","age")]
-target_set=training_set[,"price"]
-x=features_set
-y=target_set
-
-w_init=c(0,0,0,0)
-b_init=0
-tmp_alpha=1e-7
-iters=10
-
-grad_desc = h.machinelearning.gradient_descent(x=features_set, y=target_set,
-                                               w_in=w_init, b_in=b_init, 
-                                               alpha=tmp_alpha, num_iters=iters, 
-                                               verbose=TRUE, search=FALSE, plot=TRUE, scale=FALSE)
-
-
-training_set <- data.frame(
-  size = scale(size),
-  rooms = scale(rooms),
-  floors = scale(floors),
-  age = scale(age),
-  price = scale(y)
-)
-
-plot(training_set$size,training_set$age)
-
-
-features_set=training_set[,c("size","rooms","floors","age")]
-target_set=training_set[,"price"]
-x=features_set
-y=target_set
-tmp_alpha=1.0e-1 
-grad_desc = h.machinelearning.gradient_descent(x=features_set, y=target_set,
-                                               w_in=w_init, b_in=b_init, 
-                                               alpha=tmp_alpha, num_iters=1000, 
-                                               verbose=TRUE, search=FALSE, plot=TRUE, scale=TRUE)
-
-
-
-
-
-x = c(6.1101,  5.5277,  8.5186,  7.0032,  5.8598,  8.3829,  7.4764,
-   8.5781,  6.4862,  5.0546,  5.7107, 14.164 ,  5.734 ,  8.4084,
-   5.6407,  5.3794,  6.3654,  5.1301,  6.4296,  7.0708,  6.1891,
-   20.27  ,  5.4901,  6.3261,  5.5649, 18.945 , 12.828 , 10.957 ,
-   13.176 , 22.203 ,  5.2524,  6.5894,  9.2482,  5.8918,  8.2111,
-   7.9334,  8.0959,  5.6063, 12.836 ,  6.3534,  5.4069,  6.8825,
-   11.708 ,  5.7737,  7.8247,  7.0931,  5.0702,  5.8014, 11.7   ,
-   5.5416,  7.5402,  5.3077,  7.4239,  7.6031,  6.3328,  6.3589,
-   6.2742,  5.6397,  9.3102,  9.4536,  8.8254,  5.1793, 21.279 ,
-   14.908 , 18.959 ,  7.2182,  8.2951, 10.236 ,  5.4994, 20.341 ,
-   10.136 ,  7.3345,  6.0062,  7.2259,  5.0269,  6.5479,  7.5386,
-   5.0365, 10.274 ,  5.1077,  5.7292,  5.1884,  6.3557,  9.7687,
-   6.5159,  8.5172,  9.1802,  6.002 ,  5.5204,  5.0594,  5.7077,
-   7.6366,  5.8707,  5.3054,  8.2934, 13.394 ,  5.4369)
-y = c(17.592  ,  9.1302 , 13.662  , 11.854  ,  6.8233 , 11.886  ,
-      4.3483 , 12.     ,  6.5987 ,  3.8166 ,  3.2522 , 15.505  ,
-      3.1551 ,  7.2258 ,  0.71618,  3.5129 ,  5.3048 ,  0.56077,
-      3.6518 ,  5.3893 ,  3.1386 , 21.767  ,  4.263  ,  5.1875 ,
-      3.0825 , 22.638  , 13.501  ,  7.0467 , 14.692  , 24.147  ,
-      -1.22   ,  5.9966 , 12.134  ,  1.8495 ,  6.5426 ,  4.5623 ,
-      4.1164 ,  3.3928 , 10.117  ,  5.4974 ,  0.55657,  3.9115 ,
-      5.3854 ,  2.4406 ,  6.7318 ,  1.0463 ,  5.1337 ,  1.844  ,
-      8.0043 ,  1.0179 ,  6.7504 ,  1.8396 ,  4.2885 ,  4.9981 ,
-      1.4233 , -1.4211 ,  2.4756 ,  4.6042 ,  3.9624 ,  5.4141 ,
-      5.1694 , -0.74279, 17.929  , 12.054  , 17.054  ,  4.8852 ,
-      5.7442 ,  7.7754 ,  1.0173 , 20.992  ,  6.6799 ,  4.0259 ,
-      1.2784 ,  3.3411 , -2.6807 ,  0.29678,  3.8845 ,  5.7014 ,
-      6.7526 ,  2.0576 ,  0.47953,  0.20421,  0.67861,  7.5435 ,
-      5.3436 ,  4.2415 ,  6.7981 ,  0.92695,  0.152  ,  2.8214 ,
-      1.8451 ,  4.2959 ,  7.2029 ,  1.9869 ,  0.14454,  9.0551 ,
-      0.61705)
-plot(x,y)
-
-grad_desc = h.machinelearning.gradient_descent(x=x, y=y,
-                                               w_in=100, b_in=100, 
-                                               alpha=.001, num_iters=5000, 
-                                               verbose=TRUE, search=TRUE, plot=TRUE, scale=FALSE)
-
 
 
