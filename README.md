@@ -4,4 +4,4 @@ h.lab is an R package in development by me (Hamid Turker) to, eventually, form a
 
 Although many of these functions are already finished and in use, this project is still very much in its early days.
 
-For the Matlab versions of these scripts, check the h_lab repo.
+For the Matlab versions of these scripts, keep an eye on the h_lab repo (but note that R and future Python versions of the code will be prioritized).
