@@ -13,6 +13,8 @@ h.format.expand_grid <- function(x, method = "late") {
       grid (array)      : An array with all combinations formatted based on chosen
                           method of cycling "
   
+  # Source
+  message("h.fomat.expand_grid :: v0.1: 2026 March 22")
   
   # Check args
   {
