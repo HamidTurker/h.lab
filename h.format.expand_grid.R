@@ -1,3 +1,6 @@
+# Source
+message("h.fomat.expand_grid :: v0.1: 2026 March 22")
+
 h.format.expand_grid <- function(x, method = "late") {
   
   " Takes a vector or list of vectors and returns an array containing one row
@@ -12,9 +15,6 @@ h.format.expand_grid <- function(x, method = "late") {
     Returns:
       grid (array)      : An array with all combinations formatted based on chosen
                           method of cycling "
-  
-  # Source
-  message("h.fomat.expand_grid :: v0.1: 2026 March 22")
   
   # Check args
   {
