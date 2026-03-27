@@ -1,5 +1,5 @@
 # Source
-message("h.graph.raster :: v0.7: 2023 June 15")
+message("h.graph.raster :: v0.8: 2026 March 24")
 
 # Function
 h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5, post = 5, bin = .001, no_plot = FALSE, 
@@ -137,83 +137,68 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
   }
   
   ########## Plot raster
-  if (no_plot) { # Make a plot or just return raster_frame?
-    
-    return(as.data.frame(raster_frame)) # No plot, just return the data frame
+  # No plot, just return the data frame
+  if (no_plot) {
+    return(as.data.frame(raster_frame))
     message("Raster frame is unflipped and unordered: the first row is the first 'per'.")
+  }
+  
+  # Make a plot
+  if (!no_plot) {
     
-  } else { # Make a plot
-    
-    # Are we sorting the graph based on other events?
-    if (is.null(sortby_other_event)) { # Don't sort by one of the other_events
+    ## Are we sorting the graph based on other events?
+    # No other events
+    if (is.null(sortby_other_event)) {
       
-      # Do we have groups?
-      if (is.null(group)) { # Don't sort by other_events, don't sort by groups
+      ## Do we have groups?
+      # No groups
+      if (is.null(group)) {
+        
+        # Prep
         {
-          # Flip per-axis?
-          if (flip_per) { # Don't sort by other_events, don't sort by groups, do flip y-axis
+          if (flip_per) { ylim_events = rev(c(.5,n_events+1)) } else { ylim_events = c(.5,n_events+1) }
+        }
+        
+        # PLOT RASTER: No other_events, no groups
+        {
+          plot(x=NULL,xlab=xlab,ylab=ylab,ylim=ylim_events,xlim=c(-pre,post),axes=FALSE); axis(1)
+          if (!is.null(event_marker_col)) {abline(v=0, col=event_marker_col, lwd=event_marker_lwd)}
+          
+          # Mark raster for each spike
+          for (i in 1:n_events) {
+            clip(x1=-pre, x2=post, y1=(i-.5), y2=(i+.5))
+            if (raster_lines) {abline(h=i, lwd=raster_line_size, col=raster_line_col)}
+            abline(v=bin*which(raster_frame[i,]==1)-pre, lwd=spike_size, col=spike_col)
             
-            # Set up raster
-            plot(x=NULL,xlab=xlab,ylab=ylab,ylim=rev(c(.5,n_events+1)),xlim=c(-pre,post))
-            if (!is.null(event_marker_col)) {abline(v=0, col=event_marker_col, lwd=event_marker_lwd)}
-            
-            # Mark raster for each spike
-            for (i in 1:n_events) {
-              clip(x1=-pre, x2=post, y1=(i-.5), y2=(i+.5))
-              if (raster_lines) {abline(h=i, lwd=raster_line_size, col=raster_line_col)}
-              abline(v=bin*which(raster_frame[i,]==1)-pre, lwd=spike_size, col=spike_col)
-              
-              # Also mark other events, if requested
-              if (!is.null(other_event_times)) {
-                for (j in 1:n_other_events) {
-                  abline(v=other_event_times[i,j], col=other_events_cols[j], lwd=other_event_size)
-                }
+            # Also mark other events, if requested
+            if (!is.null(other_event_times)) {
+              for (j in 1:n_other_events) {
+                abline(v=other_event_times[i,j], col=other_events_cols[j], lwd=other_event_size)
               }
-            } 
-          } else { # Don't sort by other_events, don't sort by groups, don't flip y-axis
-            
-            # Set up raster
-            plot(x=NULL,xlab=xlab,ylab=ylab,ylim=c(.5,n_events+1),xlim=c(-pre,post))
-            if (!is.null(event_marker_col)) {abline(v=0, col=event_marker_col, lwd=event_marker_lwd)}
-            
-            # Mark raster for each spike
-            for (i in 1:n_events) {
-              clip(x1=-pre, x2=post, y1=(i-.5), y2=(i+.5))
-              if (raster_lines) {abline(h=i, lwd=raster_line_size, col=raster_line_col)}
-              abline(v=bin*which(raster_frame[i,]==1)-pre, lwd=spike_size, col=spike_col)
-              
-              # Also mark other events, if requested
-              if (!is.null(other_event_times)) {
-                for (j in 1:n_other_events) {
-                  abline(v=other_event_times[i,j], col=other_events_cols[j], lwd=other_event_size)
-                }
-              }
-            } 
+            }
           }
         }
         
-      } else { # Don't sort by other_events, but do sort by groups
-        {      
-          # Convert to data frame, add grouping variable, order, and rename
+      }
+      
+      # Groups
+      if (!is.null(group)) {
+        
+        # Prep
+        {
           raster_frame = as.data.frame(raster_frame)
           raster_frame$group = group
           
-          # Order the raster
-          if (flip_per) {
-            ordering <- order(raster_frame$group, decreasing = TRUE) # Match the group IDs to trial IDs
-            raster_frame <- raster_frame[ordering,] # Reorder trials to group them based on group IDs
-            group_labels <- sort(unique(group), decreasing = TRUE) # Also reorder the group_labels..
-            group_colors <- rev(group_colors) # ..and group colors
-            if (!is.null(other_event_times)) { other_event_times = other_event_times[ordering,] } # If there are other_events, remember to reorder those too.
-          } else {
-            ordering <- order(raster_frame$group) # Match the group IDs to trial IDs
-            raster_frame <- raster_frame[ordering,] # Reorder trials to group them based on group IDs
-            group_labels <- sort(unique(group)) # Also reorder the group_labels. Group colors are already in the right order.
-            if (!is.null(other_event_times)) { other_event_times = other_event_times[ordering,] } # If there are other_events, remember to reorder those too.
-          }
-          
-          # Set up raster
-          plot(x=NULL,xlab=xlab,ylab=ylab,ylim=c(.5,n_events+1),xlim=c(-pre,post),tck=-.02)
+          ordering <- order(raster_frame$group, decreasing = flip_per) # Match the group IDs to trial IDs
+          raster_frame <- raster_frame[ordering,] # Reorder trials to group them based on group IDs
+          group_labels <- sort(unique(group), decreasing = flip_per) # Also reorder the group_labels..
+          group_colors <- rev(group_colors) # ..and group colors
+          if (!is.null(other_event_times)) { other_event_times = other_event_times[ordering,] } # If there are other_events, remember to reorder those too.
+        }
+        
+        # PLOT RASTER: No other_events, with groups
+        {
+          plot(x=NULL,xlab=xlab,ylab=ylab,ylim=c(.5,n_events+1),xlim=c(-pre,post),tck=-.02,axes=FALSE); axis(1)
           abline(col=group_line_col,lwd=group_line_size,h=which(c(FALSE, !as.character(raster_frame$group)[-1] == as.character(raster_frame$group)[-length(raster_frame$group)]))-.5)
           if (!is.null(event_marker_col)) {abline(v=0, col=event_marker_col, lwd=event_marker_lwd)}
           
@@ -235,27 +220,31 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
             }
           }
         }
-        
+  
       }
 
-    } else { # Sort by one of the other_events
+    }
       
-      # Do we have groups?
-      if (is.null(group)) { # Sort by other_events, don't sort by groups
+    # Sort by one of the other_events
+    if (!is.null(sortby_other_events)) {
+      
+      ## Do we have groups?
+      # No groups
+      if (is.null(group)) {
+
+        # Prep
         {
-          # Reorder based on chosen other_event
           ordering <- order(other_event_times[,sortby_other_event])
           other_event_times <- other_event_times[ordering,]
           raster_frame <- raster_frame[ordering,]
           
           # Flip per-axis?
-          if (flip_per) { # Sort by other_events, don't sort by groups, do flip y-axis
-            plot(x=NULL,xlab=xlab,ylab=ylab,ylim=rev(c(.5,n_events+1)),xlim=c(-pre,post))
-          } else { # Don't sort by other_events, don't sort by groups, don't flip y-axis
-            plot(x=NULL,xlab=xlab,ylab=ylab,ylim=c(.5,n_events+1),xlim=c(-pre,post))
-          }
-          
-          # Set up raster
+          if (flip_per) { ylim_events = rev(c(.5,n_events+1)) } else { ylim_events = c(.5,n_events+1) }
+        }
+        
+        # PLOT RASTER: With other_events, no groups
+        {
+          plot(x=NULL,xlab=xlab,ylab=ylab,ylim=ylim_events,xlim=c(-pre,post),axes=FALSE); axis(1)
           if (!is.null(event_marker_col)) {abline(v=0, col=event_marker_col, lwd=event_marker_lwd)}
           
           # Mark raster for each spike in the peri-event window
@@ -269,62 +258,43 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
               abline(v=other_event_times[i,j], col=other_events_cols[j], lwd=other_event_size)
             }
           }
-          
         }
         
-      } else { # Sort by other_events, also sort by groups
-        {      
+      }
+        
+      # Groups
+      if (!is.null(group)) { 
+     
+        # Prep
+        {
           # Convert to data frame and add grouping variable
           raster_frame = as.data.frame(raster_frame)
           raster_frame$group = group
           
           # Order the raster
-          if (flip_per) {
-            
-            # First, order the raster based on the groups
-            ordering <- order(raster_frame$group, decreasing = TRUE)
-            raster_frame <- raster_frame[ordering,]
-            group_labels <- sort(unique(group), decreasing = TRUE)
-            group_colors <- rev(group_colors)
-            other_event_times = other_event_times[ordering,]
-            
-            # Next, reorder again based on the other_event_time within each group
-            for (i in 1:n_groups) {
-              group_trials <- which(raster_frame$group==group_labels[i]) # Which trials belong to this group?
-              hold <- other_event_times[group_trials,] # Put those trials aside
-              ordering <- order(hold[,sortby_other_event]) # Find their new ordering
-              hold <- hold[ordering,] # Implement the new ordering
-              other_event_times[group_trials,] <- hold # Place this group's reordered trials back in main array
-              
-              hold <- raster_frame[group_trials,] # Remember to reorder the spike data itself too
-              hold <- hold[ordering,] # Implement the new ordering
-              raster_frame[group_trials,] <- hold # Place them back
-            }
-            
-            } else {
-              
-              # First, order the raster based on the groups
-              ordering <- order(raster_frame$group)
-              raster_frame <- raster_frame[ordering,]
-              group_labels <- sort(unique(group))
-              other_event_times = other_event_times[ordering,]
-              
-              # Next, reorder again based on the other_event_time within each group
-              for (i in 1:n_groups) {
-                group_trials <- which(raster_frame$group==group_labels[i]) # Which trials belong to this group?
-                hold <- other_event_times[group_trials,] # Put those trials aside
-                ordering <- order(hold[,sortby_other_event]) # Find their new ordering
-                hold <- hold[ordering,] # Implement the new ordering
-                other_event_times[group_trials,] <- hold # Place this group's reordered trials back in main array
-                
-                hold <- raster_frame[group_trials,] # Remember to reorder the spike data itself too
-                hold <- hold[ordering,] # Implement the new ordering
-                raster_frame[group_trials,] <- hold # Place them back
-              }
-          }
+          ordering <- order(raster_frame$group, decreasing = flip_per)
+          raster_frame <- raster_frame[ordering,]
+          group_labels <- sort(unique(group), decreasing = flip_per)
+          group_colors <- rev(group_colors)
+          other_event_times = other_event_times[ordering,]
           
-          # Set up raster
-          plot(x=NULL,xlab=xlab,ylab=ylab,ylim=c(.5,n_events+1),xlim=c(-pre,post),tck=-.02)
+          # Next, reorder again based on the other_event_time within each group
+          for (i in 1:n_groups) {
+            group_trials <- which(raster_frame$group==group_labels[i]) # Which trials belong to this group?
+            hold <- other_event_times[group_trials,] # Put those trials aside
+            ordering <- order(hold[,sortby_other_event]) # Find their new ordering
+            hold <- hold[ordering,] # Implement the new ordering
+            other_event_times[group_trials,] <- hold # Place this group's reordered trials back in main array
+            
+            hold <- raster_frame[group_trials,] # Remember to reorder the spike data itself too
+            hold <- hold[ordering,] # Implement the new ordering
+            raster_frame[group_trials,] <- hold # Place them back
+          }
+        }
+          
+        # PLOT RASTER: with other_events, with groups
+        {
+          plot(x=NULL,xlab=xlab,ylab=ylab,ylim=c(.5,n_events+1),xlim=c(-pre,post),tck=-.02,axes=FALSE); axis(1)
           abline(col=group_line_col,lwd=group_line_size,h=which(c(FALSE, !as.character(raster_frame$group)[-1] == as.character(raster_frame$group)[-length(raster_frame$group)]))-.5)
           if (!is.null(event_marker_col)) {abline(v=0, col=event_marker_col, lwd=event_marker_lwd)}
           
@@ -348,6 +318,12 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
       }
       
     }
-  }
+      
+    
+  }  
+  
   
 }
+
+      
+      
