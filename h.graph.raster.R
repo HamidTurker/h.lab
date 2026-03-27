@@ -5,7 +5,7 @@ message("h.graph.raster :: v0.8: 2026 March 24")
 h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5, post = 5, bin = .001, no_plot = FALSE, 
                            group = NULL, group_colors = NULL, event_marker_col = "black", event_marker_lwd = 1, spike_size = 1, spike_col = "grey",
                            group_line_size = 2, group_line_col = "black", ylab = NULL, xlab = NULL, other_events = NULL, other_events_cols = NULL, sortby_other_event = NULL,
-                           other_event_size = 4, raster_lines = FALSE, raster_line_size = 1/5, raster_line_col = "lightgrey") {
+                           other_event_size = 4, raster_lines = FALSE, raster_line_size = 1/5, raster_line_col = "lightgrey", font = "Times New Roman") {
   
   "
   Create a raster plot from the provided spike train, event/stimulus times, and 
@@ -55,6 +55,7 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
       raster_lines (bool)     : Add guiding raster lines to plot.
       raster_line_size (num)  : Size of the guiding raster lines.
       raster_line_col (char)  : Color of the guiding raster lines.
+      font (char)             : Font family
       
                                 
     Return:
@@ -161,7 +162,7 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
         
         # PLOT RASTER: No other_events, no groups
         {
-          plot(x=NULL,xlab=xlab,ylab=ylab,ylim=ylim_events,xlim=c(-pre,post),axes=FALSE); axis(1)
+          plot(x=NULL,xlab=xlab,ylab=ylab,ylim=ylim_events,xlim=c(-pre,post),axes=FALSE); axis(1,family=font)
           if (!is.null(event_marker_col)) {abline(v=0, col=event_marker_col, lwd=event_marker_lwd)}
           
           # Mark raster for each spike
@@ -198,7 +199,7 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
         
         # PLOT RASTER: No other_events, with groups
         {
-          plot(x=NULL,xlab=xlab,ylab=ylab,ylim=c(.5,n_events+1),xlim=c(-pre,post),tck=-.02,axes=FALSE); axis(1)
+          plot(x=NULL,xlab=xlab,ylab=ylab,ylim=c(.5,n_events+1),xlim=c(-pre,post),tck=-.02,axes=FALSE); axis(1,family=font)
           abline(col=group_line_col,lwd=group_line_size,h=which(c(FALSE, !as.character(raster_frame$group)[-1] == as.character(raster_frame$group)[-length(raster_frame$group)]))-.5)
           if (!is.null(event_marker_col)) {abline(v=0, col=event_marker_col, lwd=event_marker_lwd)}
           
@@ -244,7 +245,7 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
         
         # PLOT RASTER: With other_events, no groups
         {
-          plot(x=NULL,xlab=xlab,ylab=ylab,ylim=ylim_events,xlim=c(-pre,post),axes=FALSE); axis(1)
+          plot(x=NULL,xlab=xlab,ylab=ylab,ylim=ylim_events,xlim=c(-pre,post),axes=FALSE); axis(1,family=font)
           if (!is.null(event_marker_col)) {abline(v=0, col=event_marker_col, lwd=event_marker_lwd)}
           
           # Mark raster for each spike in the peri-event window
@@ -294,7 +295,7 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
           
         # PLOT RASTER: with other_events, with groups
         {
-          plot(x=NULL,xlab=xlab,ylab=ylab,ylim=c(.5,n_events+1),xlim=c(-pre,post),tck=-.02,axes=FALSE); axis(1)
+          plot(x=NULL,xlab=xlab,ylab=ylab,ylim=c(.5,n_events+1),xlim=c(-pre,post),tck=-.02,axes=FALSE); axis(1,family=font)
           abline(col=group_line_col,lwd=group_line_size,h=which(c(FALSE, !as.character(raster_frame$group)[-1] == as.character(raster_frame$group)[-length(raster_frame$group)]))-.5)
           if (!is.null(event_marker_col)) {abline(v=0, col=event_marker_col, lwd=event_marker_lwd)}
           
@@ -320,7 +321,7 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
     }
       
     
-  }  
+  }
   
   
 }
