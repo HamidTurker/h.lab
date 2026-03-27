@@ -226,7 +226,7 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
     }
       
     # Sort by one of the other_events
-    if (!is.null(sortby_other_events)) {
+    if (!is.null(sortby_other_event)) {
       
       ## Do we have groups?
       # No groups
