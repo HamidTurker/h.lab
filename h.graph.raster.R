@@ -77,7 +77,7 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
     
     if (!is.null(other_events)) {
       if (!no_plot) {
-        if (length(other_events)==1) { other_events = list(other_events) }
+        if (length(other_events)==1 & !is.list(other_events)) { other_events = list(other_events) }
         if (!class(other_events)=="list") { stop("Your other_events must be in a list of vectors.") }
         for (i in 1:length(other_events)) {
           if (!length(other_events[[i]])==length(events)) { 
