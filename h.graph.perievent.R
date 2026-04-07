@@ -1,5 +1,5 @@
 # Source
-message("h.graph.perievent :: v0.7: 2023 Mar 27")
+message("h.graph.perievent :: v0.8: 2026 Apr 7")
 
 # Function
 h.graph.perievent <- function(events, spikes, group = NULL,
@@ -39,7 +39,7 @@ h.graph.perievent <- function(events, spikes, group = NULL,
     if (!allow_dupe) { message("Are you sure you want to remove counted spikes (thus, no duplicates)? That is often not recommended.") }
     
     if (!is.null(other_events)) {
-      if (length(other_events)==1) { other_events = list(other_events) }
+      if (length(other_events)==1 & !is.list(other_events)) { other_events = list(other_events) }
       if (!class(other_events)=="list") { stop("Your other_events must be in a list of vectors.") }
       for (i in 1:length(other_events)) {
         if (!length(other_events[[i]])==length(events)) { 
