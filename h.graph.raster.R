@@ -2,7 +2,7 @@
 message("h.graph.raster :: v0.8: 2026 March 24")
 
 # Function
-h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5, post = 5, bin = .001, no_plot = FALSE, 
+h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5, post = 5, bin = .001, plot = TRUE, 
                            group = NULL, group_colors = NULL, event_marker_col = "black", event_marker_lwd = 1, spike_size = 1, spike_col = "grey",
                            group_line_size = 2, group_line_col = "black", ylab = NULL, xlab = NULL, other_events = NULL, other_events_cols = NULL, sortby_other_event = NULL,
                            other_event_size = 4, raster_lines = FALSE, raster_line_size = 1/5, raster_line_col = "lightgrey", font = "Times New Roman") {
@@ -27,7 +27,7 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
                                 leading up to the event of interest.
       post (num)              : Window following the event to be plotted (in seconds).
       bin (num)               : Time bin for the raster.
-      no_plot (bool)          : If TRUE, don't make a plot, just return the created raster (as data frame).
+      plot (bool)             : If TRUE, make a plot. If FALSE, just return the created raster (as data frame).
                                 The data frame will be 'unflipped' and otherwise 'unordered' (i.e., the top 
                                 row will be the first 'per' [typically, a trial], the second row the second per, etc.)
       group (vector)          : Grouping variable of each event time.
@@ -71,12 +71,12 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
     
     if (!is.null(group)) {
       if (!length(group)==length(events)) { stop("Each provided event does not have a corresponding group label.") }
-      if (!no_plot & is.null(group_colors)) { stop("You didn't assign group colors.") }
-      if (!no_plot & !length(group_colors)==length(unique(group))) { stop("The number of group_colors doesn't match the number of unique group labels.") }
+      if (plot & is.null(group_colors)) { stop("You didn't assign group colors.") }
+      if (plot & !length(group_colors)==length(unique(group))) { stop("The number of group_colors doesn't match the number of unique group labels.") }
     }
     
     if (!is.null(other_events)) {
-      if (!no_plot) {
+      if (plot) {
         if (length(other_events)==1 & !is.list(other_events)) { other_events = list(other_events) }
         if (!class(other_events)=="list") { stop("Your other_events must be in a list of vectors.") }
         for (i in 1:length(other_events)) {
@@ -130,7 +130,7 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
   if (!is.null(other_events)) {
     n_other_events = length(other_events)
     other_event_times = array(NA, c(n_events,n_other_events))
-  
+    
     # Adjust other_event times in relation to the main event marker
     for (i in 1:n_other_events) {
       other_event_times[,i] = as.numeric(unlist(other_events[i])) - events
@@ -139,13 +139,13 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
   
   ########## Plot raster
   # No plot, just return the data frame
-  if (no_plot) {
+  if (!plot) {
     return(as.data.frame(raster_frame))
     message("Raster frame is unflipped and unordered: the first row is the first 'per'.")
   }
   
   # Make a plot
-  if (!no_plot) {
+  if (plot) {
     
     ## Are we sorting the graph based on other events?
     # No other events
@@ -170,16 +170,8 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
             clip(x1=-pre, x2=post, y1=(i-.5), y2=(i+.5))
             if (raster_lines) {abline(h=i, lwd=raster_line_size, col=raster_line_col)}
             abline(v=bin*which(raster_frame[i,]==1)-pre, lwd=spike_size, col=spike_col)
-            
-            # Also mark other events, if requested
-            if (!is.null(other_event_times)) {
-              for (j in 1:n_other_events) {
-                abline(v=other_event_times[i,j], col=other_events_cols[j], lwd=other_event_size)
-              }
-            }
           }
         }
-        
       }
       
       # Groups
@@ -207,32 +199,25 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
           for (i in 1:n_events) {
             clip(x1=-pre, x2=post, y1=(i-.5), y2=(i+.5))
             if (raster_lines) {abline(h=i, lwd=raster_line_size, col=raster_line_col)}
-            for (j in 1:length(group_labels)) {
-              if (group_labels[j]==raster_frame$group[i]) {
-                abline(v=bin*which(raster_frame[i,]==1)-pre, col=group_colors[j])
-              }
-            }
-            
-            # Also mark other events, if requested
-            if (!is.null(other_event_times)) {
-              for (k in 1:n_other_events) {
-                abline(v=other_event_times[i,k], col=other_events_cols[k], lwd=other_event_size)
+            for (k in 1:length(group_labels)) {
+              if (group_labels[k]==raster_frame$group[i]) {
+                abline(v=bin*which(raster_frame[i,]==1)-pre, col=group_colors[k])
               }
             }
           }
         }
-  
+        
       }
-
-    }
       
+    }
+    
     # Sort by one of the other_events
     if (!is.null(sortby_other_event)) {
       
       ## Do we have groups?
       # No groups
       if (is.null(group)) {
-
+        
         # Prep
         {
           ordering <- order(other_event_times[,sortby_other_event])
@@ -256,16 +241,23 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
             
             # And mark the other events in that peri-event window
             for (j in 1:n_other_events) {
-              abline(v=other_event_times[i,j], col=other_events_cols[j], lwd=other_event_size)
+              
+              # Other_events == 1 or > 1?
+              if (n_other_events == 1) { 
+                for (j in 1:n_other_events) { abline(v=other_event_times[i], col=other_events_cols[j], lwd=other_event_size) } 
+              } else {
+                for (j in 1:n_other_events) { abline(v=other_event_times[i,j], col=other_events_cols[j], lwd=other_event_size) }
+              }         
             }
           }
+          
         }
         
       }
-        
+      
       # Groups
       if (!is.null(group)) { 
-     
+        
         # Prep
         {
           # Convert to data frame and add grouping variable
@@ -277,22 +269,35 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
           raster_frame <- raster_frame[ordering,]
           group_labels <- sort(unique(group), decreasing = flip_per)
           group_colors <- rev(group_colors)
-          other_event_times = other_event_times[ordering,]
+          if (n_other_events == 1) { other_event_times = other_event_times[ordering] } else { other_event_times = other_event_times[ordering,] }
           
           # Next, reorder again based on the other_event_time within each group
           for (i in 1:n_groups) {
             group_trials <- which(raster_frame$group==group_labels[i]) # Which trials belong to this group?
-            hold <- other_event_times[group_trials,] # Put those trials aside
-            ordering <- order(hold[,sortby_other_event]) # Find their new ordering
-            hold <- hold[ordering,] # Implement the new ordering
-            other_event_times[group_trials,] <- hold # Place this group's reordered trials back in main array
-            
-            hold <- raster_frame[group_trials,] # Remember to reorder the spike data itself too
-            hold <- hold[ordering,] # Implement the new ordering
-            raster_frame[group_trials,] <- hold # Place them back
+            if (n_other_events == 1) { 
+              hold <- other_event_times[group_trials]
+              ordering <- order(hold)
+              hold <- hold[ordering]
+              other_event_times[group_trials] <- hold
+              
+              hold <- raster_frame[group_trials] # Remember to reorder the spike data itself too
+              hold <- hold[ordering] # Implement the new ordering
+              raster_frame[group_trials] <- hold # Place them back
+              
+            } else {
+              group_trials <- which(raster_frame$group==group_labels[i]) # Which trials belong to this group?
+              hold <- other_event_times[group_trials,] # Put those trials aside
+              ordering <- order(hold[,sortby_other_event]) # Find their new ordering
+              hold <- hold[ordering,] # Implement the new ordering
+              other_event_times[group_trials,] <- hold # Place this group's reordered trials back in main array
+              
+              hold <- raster_frame[group_trials,] # Remember to reorder the spike data itself too
+              hold <- hold[ordering,] # Implement the new ordering
+              raster_frame[group_trials,] <- hold # Place them back
+            }
           }
         }
-          
+        
         # PLOT RASTER: with other_events, with groups
         {
           plot(x=NULL,xlab=xlab,ylab=ylab,ylim=c(.5,n_events+1),xlim=c(-pre,post),tck=-.02,axes=FALSE); axis(1,family=font)
@@ -303,28 +308,32 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
           for (i in 1:n_events) {
             clip(x1=-pre, x2=post, y1=(i-.5), y2=(i+.5))
             if (raster_lines) {abline(h=i, lwd=raster_line_size, col=raster_line_col)}
-            for (j in 1:length(group_labels)) {
-              if (group_labels[j]==raster_frame$group[i]) {
-                abline(v=bin*which(raster_frame[i,]==1)-pre, col=group_colors[j])
+            for (k in 1:length(group_labels)) {
+              if (group_labels[k]==raster_frame$group[i]) {
+                abline(v=bin*which(raster_frame[i,]==1)-pre, col=group_colors[k])
               }
             }
             
             # And mark the other events in that peri-event window
-            for (k in 1:n_other_events) {
-              abline(v=other_event_times[i,k], col=other_events_cols[k], lwd=other_event_size)
+            for (j in 1:n_other_events) {
+              
+              # Other_events == 1 or > 1?
+              if (n_other_events == 1) { 
+                for (j in 1:n_other_events) { abline(v=other_event_times[i], col=other_events_cols[j], lwd=other_event_size) } 
+              } else {
+                for (j in 1:n_other_events) { abline(v=other_event_times[i,j], col=other_events_cols[j], lwd=other_event_size) }
+              }         
             }
           }
+          
         }
         
       }
       
-    }
       
-    
+    }
   }
-  
   
 }
 
-      
-      
+
