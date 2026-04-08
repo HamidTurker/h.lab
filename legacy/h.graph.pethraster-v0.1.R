@@ -10,7 +10,7 @@ h.graph.pethraster <- function(events, spikes, group = NULL,
                                plot = FALSE, plot_y = "count", theme = FALSE,
                                spike_size = 1, other_event_size = 5, sortby_eoi = 1,
                                per = NULL, x_lab = "Time (s)", event_marker_lwd = 2, group_line_size = 1,
-                               font = NULL) {
+                               font = NULL, plot_margins = c(2,1.7,0,.5)) {
   
   "
   Combined PETH and raster plot.
@@ -55,7 +55,7 @@ h.graph.pethraster <- function(events, spikes, group = NULL,
     
     # Raster
     pushViewport(vp=vplayout(2,1)); par(fig = gridFIG(), new = TRUE)
-    par(mar=c(2,1.75,0,.5)) # 175 x 250 pixels    / 1.85 x 2.58 in
+    par(mar=plot_margins) # 175 x 250 pixels    / 1.85 x 2.58 in   c(2,1.75,0,.5)
     
     h.graph.raster(events=events, spike_col=rast_col_spike,
                    pre=pre, post=post,
@@ -87,7 +87,7 @@ h.graph.pethraster <- function(events, spikes, group = NULL,
     
     # Raster
     pushViewport(vp=vplayout(2,1)); par(fig = gridFIG(), new = TRUE)
-    par(mar=c(2,1.75,0,.5)) # 175 x 250 pixels    / 1.85 x 2.58 in
+    par(mar=plot_margins) # 175 x 250 pixels    / 1.85 x 2.58 in   c(2,1.75,0,.5)
     
     h.graph.raster(events=events, spike_col=rast_col_spike,
                    pre=pre, post=post,
