@@ -33,6 +33,7 @@ h.graph.pethraster <- function(events, spikes, group = NULL,
                        plot.title = element_text(size = 10, face = "bold")
     )
     line_int=0; line_col="black"; line_size=1; line_type="solid"
+    #brk <- function(x) seq(ceiling(x[1]), floor(x[2]), by = 1)
   }
   
   # Groups?
@@ -48,7 +49,8 @@ h.graph.pethraster <- function(events, spikes, group = NULL,
                             other_events=other_events)
     
     p=ggplot(df[[1]], aes(x=time, y=Hz)) + plottheme +
-      geom_area(stat='identity', position='identity', alpha=alpha_val, fill = peth_col_spike, col = "black", linewidth = .1) +
+      #scale_y_continuous(breaks = brk) +
+      geom_area(stat='identity', position='identity', alpha=alpha_val, fill = peth_col_spike, col = "black", linewidth = .05) +
       geom_vline(xintercept=line_int, color=line_col, size=line_size, linetype=line_type) +
       theme(legend.position="none")
     print(p, vp = vplayout(1,1))
@@ -79,8 +81,9 @@ h.graph.pethraster <- function(events, spikes, group = NULL,
                             other_events=other_events)
     
     p=ggplot(df[[1]], aes(x=time, y=Hz, fill = df[[1]]$group)) + plottheme +
+      #scale_y_continuous(breaks = brk) +
       scale_fill_manual(values = peth_col_spike) + 
-      geom_area(stat='identity', position='identity', alpha=alpha_val, col = "black", linewidth = .1) +
+      geom_area(stat='identity', position='identity', alpha=alpha_val, col = "black", linewidth = .05) +
       geom_vline(xintercept=line_int, color=line_col, size=line_size, linetype=line_type) +
       theme(legend.position="none")
     print(p, vp = vplayout(1,1))
