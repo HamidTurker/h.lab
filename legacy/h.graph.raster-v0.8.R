@@ -185,7 +185,7 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
           ordering <- order(raster_frame$group, decreasing = flip_per) # Match the group IDs to trial IDs
           raster_frame <- raster_frame[ordering,] # Reorder trials to group them based on group IDs
           group_labels <- sort(unique(group), decreasing = flip_per) # Also reorder the group_labels..
-          group_colors <- rev(group_colors) # ..and group colors
+          if (flip_per) { group_colors <- rev(group_colors) } # ..and group colors, if flipping
           if (!is.null(other_event_times)) { other_event_times = other_event_times[ordering,] } # If there are other_events, remember to reorder those too.
         }
         
@@ -268,7 +268,7 @@ h.graph.raster <- function(events, spikes, per = NULL, flip_per = FALSE, pre = 5
           ordering <- order(raster_frame$group, decreasing = flip_per)
           raster_frame <- raster_frame[ordering,]
           group_labels <- sort(unique(group), decreasing = flip_per)
-          group_colors <- rev(group_colors)
+          if (flip_per) { group_colors <- rev(group_colors) }
           if (n_other_events == 1) { other_event_times = other_event_times[ordering] } else { other_event_times = other_event_times[ordering,] }
           
           # Next, reorder again based on the other_event_time within each group
