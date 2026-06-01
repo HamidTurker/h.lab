@@ -25,8 +25,6 @@ h.calc.mutual_information <- function(spiketrain, events, max_count = NULL, corr
                                 p-value, z-score, null distribution
 
   "
-
-  #==========================================
  
   # Initialize
   obs_mi                 <- 0
